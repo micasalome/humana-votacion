@@ -201,7 +201,7 @@ export default {
         if (request.method === 'POST') return await votar(request, env);
         return json({ ok: true, counts: await conteo(env.DB) });
       } catch (e) {
-        return json({ ok: false, motivo: 'servidor' }, 500);
+        return json({ ok: false, motivo: 'servidor', detalle: String(e && e.message || e).slice(0, 300) }, 500);
       }
     }
     // La página siempre se pide fresca para que los cambios se vean al instante
