@@ -32,7 +32,7 @@ button{font-family:inherit}
 <body>
 <div id="app"></div>
 <template id="plantilla">
-<div style="position: relative; overflow: hidden; min-height: 2050px; font-family: 'Quicksand', system-ui, sans-serif; color: #0A3566; background: radial-gradient(ellipse 80% 50% at 70% 8%, rgba(70, 140, 255, 0.35) 0%, rgba(70, 140, 255, 0) 70%), linear-gradient(180deg, #040C26 0%, #081B4E 28%, #0B2C72 58%, #12469E 100%)">
+<div style="position: relative; overflow: hidden; overflow: clip; min-height: 2050px; font-family: 'Quicksand', system-ui, sans-serif; color: #0A3566; background: radial-gradient(ellipse 80% 50% at 70% 8%, rgba(70, 140, 255, 0.35) 0%, rgba(70, 140, 255, 0) 70%), linear-gradient(180deg, #040C26 0%, #081B4E 28%, #0B2C72 58%, #12469E 100%)">
 
   <div aria-hidden="true" style="position: absolute; inset: 0; pointer-events: none">
     <sc-for list="{{estrellas}}" as="e" hint-placeholder-count="0">
@@ -194,6 +194,20 @@ button{font-family:inherit}
         </sc-for>
       </div>
 
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; padding-top: 8px">
+        <span style="font-weight: 700; font-size: 15px; color: #2D4F78">Cambiar de ciudad</span>
+        <div class="tabs" role="tablist" aria-label="Ciudades (abajo)" style="display: flex; gap: 12px; justify-content: center">
+          <sc-for list="{{tabsAbajo}}" as="t" hint-placeholder-count="3">
+            <button role="tab" aria-selected="{{t.active}}" onClick="{{t.pick}}" style="{{t.tabStyle}}">
+              {{t.label}}
+              <sc-if value="{{t.voted}}" hint-placeholder-val="{{ false }}">
+                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>
+              </sc-if>
+            </button>
+          </sc-for>
+        </div>
+      </div>
+
       <div class="barra-envio" style="position: sticky; bottom: 16px; z-index: 2; background: #0A2463; color: #ffffff; border-radius: 24px; padding: 18px 20px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; box-shadow: 0 18px 40px rgba(4, 12, 38, 0.45)">
         <div class="chips" style="display: flex; flex-wrap: wrap; gap: 10px">
           <sc-for list="{{resumen}}" as="r" hint-placeholder-count="3">
@@ -260,6 +274,20 @@ button{font-family:inherit}
           </sc-for>
         </div>
       </section>
+    </sc-if>
+
+    <sc-if value="{{showModal}}" hint-placeholder-val="{{ false }}">
+      <div style="position: fixed; inset: 0; z-index: 50; background: rgba(2, 8, 30, 0.72); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 20px">
+        <div role="dialog" aria-modal="true" aria-labelledby="modal-titulo" style="width: 100%; max-width: 440px; background: #ffffff; border-radius: 28px; padding: 32px 26px 26px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 14px; box-shadow: 0 0 0 4px rgba(143, 216, 255, 0.5), 0 30px 60px rgba(0, 0, 0, 0.45)">
+          <span aria-hidden="true" style="font-size: 56px; line-height: 1">🎉</span>
+          <h2 id="modal-titulo" style="margin: 0; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 30px; line-height: 1.15; color: #0B5AA6">¡Gracias por tu voto!</h2>
+          <p style="margin: 0; font-size: 17px; line-height: 1.45; font-weight: 600; color: #2D4F78">Tu voto por Quito, Guayaquil y Cuenca quedó guardado. ¿Quieres volver a votar?</p>
+          <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; margin-top: 8px">
+            <button onClick="{{revotar}}" style="min-height: 52px; border-radius: 999px; border: 0; background: #0B5AA6; color: #ffffff; font-weight: 700; font-size: 18px; cursor: pointer; box-shadow: 0 8px 18px rgba(11, 90, 166, 0.35)">Sí, volver a votar</button>
+            <button onClick="{{cerrarModal}}" style="min-height: 48px; border-radius: 999px; border: 2px solid #0B5AA6; background: #ffffff; color: #0B5AA6; font-weight: 700; font-size: 16px; cursor: pointer">No, ver resultados</button>
+          </div>
+        </div>
+      </div>
     </sc-if>
 
     <footer style="display: flex; flex-direction: column; align-items: center; gap: 18px; text-align: center; padding-top: 8px">
@@ -397,7 +425,7 @@ class Component extends DCLogic {
       .then(function (r) { return r.json(); })
       .then(function (d) {
         if (d && d.ok) {
-          var upd = { submitted: true, enviando: false, lastPick: null };
+          var upd = { submitted: true, enviando: false, lastPick: null, modal: true };
           if (d.counts) upd.counts = d.counts;
           self.setState(upd);
         } else if (d && d.motivo === 'cerrada') {
@@ -647,6 +675,18 @@ class Component extends DCLogic {
       showPickMsg: !!lastPick && !submitted, pickMsg: pickMsg,
       hasNext: !!lastPick && !submitted && !!next, nextLabel: next ? next.label : '',
       goNext: function () { if (next) self.setState({ city: next.id, lastPick: null }); },
+      tabsAbajo: tabs.map(function (t) {
+        return Object.assign({}, t, { pick: function () { t.pick(); var el = document.getElementById('titulo-votacion'); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 20, left: 0, behavior: 'smooth' }); } });
+      }),
+      showModal: !!this.state.modal && submitted,
+      cerrarModal: function () {
+        self.setState({ modal: false });
+        var el = document.getElementById('titulo-top'); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 20, left: 0, behavior: 'smooth' });
+      },
+      revotar: function () {
+        self.setState({ modal: false, votes: { quito: null, guayaquil: null, cuenca: null }, submitted: false, lastPick: null, aviso: null, city: 'quito' });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      },
       showTop: this.props.mostrarTop3 ?? true, top: top,
       gridStyle: 'display:grid;gap:24px;grid-template-columns:repeat(' + (city === 'quito' ? 3 : 4) + ', minmax(0, 1fr));',
       submitted: submitted, resumen: resumen, cantSend: !(canSend || (submitted && open)),
