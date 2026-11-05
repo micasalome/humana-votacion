@@ -171,8 +171,7 @@ button{font-family:inherit}
           <article style="{{card.cardStyle}}">
             <sc-if value="{{card.hasPhoto}}" hint-placeholder-val="{{ false }}">
               <div style="{{card.marcoStyle}}">
-                <img src="{{card.src}}" alt="" aria-hidden="true" loading="lazy" style="position: absolute; inset: -20px; width: calc(100% + 40px); height: calc(100% + 40px); object-fit: cover; filter: blur(18px) brightness(0.75); transform: scale(1.05)">
-                <img src="{{card.src}}" alt="{{card.alt}}" loading="lazy" decoding="async" style="position: relative; display: block; width: 100%; height: 100%; object-fit: contain; object-position: center">
+                <img src="{{card.src}}" alt="{{card.alt}}" loading="lazy" decoding="async" style="{{card.imgStyle}}">
               </div>
             </sc-if>
             <sc-if value="{{card.noPhoto}}" hint-placeholder-val="{{ true }}">
@@ -269,8 +268,7 @@ button{font-family:inherit}
                 <div style="display: flex; flex-direction: column; gap: 14px">
                   <div style="position: relative; border-radius: 20px; overflow: hidden; box-shadow: 0 0 0 4px #F5C542">
                     <div style="{{r.marcoStyle}}">
-                      <img src="{{r.src}}" alt="" aria-hidden="true" style="position: absolute; inset: -20px; width: calc(100% + 40px); height: calc(100% + 40px); object-fit: cover; filter: blur(18px) brightness(0.75)">
-                      <img src="{{r.src}}" alt="{{r.title}} de {{col.label}}, la más votada" decoding="async" style="position: relative; display: block; width: 100%; height: 100%; object-fit: contain; object-position: center">
+                      <img src="{{r.src}}" alt="{{r.title}} de {{col.label}}, la más votada" decoding="async" style="{{r.imgStyle}}">
                     </div>
                     <span style="position: absolute; top: 12px; left: 12px; display: inline-flex; align-items: center; gap: 6px; background: #F5C542; color: #5A3E00; border-radius: 999px; padding: 6px 12px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 15px; box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25)">
                       <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"></path><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"></path></svg>
@@ -519,37 +517,37 @@ class Component extends DCLogic {
         'img/quito-19.jpg', 'img/quito-20.jpg',
         'img/quito-21.jpg', 'img/quito-22.jpg',
         'img/quito-23.jpg', 'img/quito-24.jpg'
-      ].map(function (s) { return { src: s, pos: 'center', ar: '3 / 2' }; }),
+      ].map(function (s) { return { src: s, pos: 'center' }; }),
       guayaquil: [
-        { src: 'img/guayaquil-01.jpg', pos: '50% 0%', nombre: 'Josias Rojas' },
-        { src: 'img/guayaquil-02.jpg', pos: '50% 0%', nombre: 'Gustavo Rojas' },
-        { src: 'img/guayaquil-03.jpg', pos: '50% 0%', nombre: 'Gabriela Romero' },
-        { src: 'img/guayaquil-04.jpg', pos: '52% 50%', nombre: 'Francis Aguirre' },
-        { src: 'img/guayaquil-05.jpg', pos: '50% 0%', nombre: 'Freddy Peñafiel' },
-        { src: 'img/guayaquil-06.jpg', pos: '50% 0%', nombre: 'Fadua Salinas' },
-        { src: 'img/guayaquil-07.jpg', pos: '50% 0%', nombre: 'Evelyn Espinoza' },
-        { src: 'img/guayaquil-08.jpg', pos: '55% 50%', nombre: 'Diego Rodriguez' },
-        { src: 'img/guayaquil-09.jpg', pos: '50% 0%', nombre: 'Daniela Zambrano' },
-        { src: 'img/guayaquil-10.jpg', pos: '50% 0%', nombre: 'Christian Gracia' },
-        { src: 'img/guayaquil-11.jpg', pos: '45% 50%', nombre: 'Carolina Naula' },
-        { src: 'img/guayaquil-12.jpg', pos: '20% 50%', nombre: 'Claudia Herrera' },
-        { src: 'img/guayaquil-13.jpg', pos: '50% 0%', nombre: 'Carol Gavilanez' },
-        { src: 'img/guayaquil-14.jpg', pos: '45% 50%', nombre: 'Yahimara Narvaez' },
-        { src: 'img/guayaquil-15.jpg', pos: '63% 50%', nombre: 'Mayra Ruiz' },
-        { src: 'img/guayaquil-16.jpg', pos: '50% 0%', nombre: 'Veronica Paredes' },
-        { src: 'img/guayaquil-17.jpg', pos: '38% 50%', nombre: 'Paulette Freire' },
-        { src: 'img/guayaquil-18.jpg', pos: '42% 50%', nombre: 'Mayra Mera' },
-        { src: 'img/guayaquil-19.jpg', pos: '63% 50%', nombre: 'Max Wirz' },
-        { src: 'img/guayaquil-20.jpg', pos: '38% 50%', nombre: 'Marlon Garcia' },
-        { src: 'img/guayaquil-21.jpg', pos: '50% 20%', nombre: 'Maria Jose Cabrera' },
-        { src: 'img/guayaquil-22.jpg', pos: '50% 25%', nombre: 'Maria Fernanda Pijal' },
-        { src: 'img/guayaquil-23.jpg', pos: '35% 50%', nombre: 'Maria Luisa Cherrez' }
+        { src: 'img/guayaquil-01.jpg', pos: '50% 25%', nombre: 'Josias Rojas' },
+        { src: 'img/guayaquil-02.jpg', pos: '50% 30%', nombre: 'Gustavo Rojas' },
+        { src: 'img/guayaquil-03.jpg', pos: '50% 35%', nombre: 'Gabriela Romero' },
+        { src: 'img/guayaquil-04.jpg', pos: 'center', nombre: 'Francis Aguirre' },
+        { src: 'img/guayaquil-05.jpg', pos: '50% 32%', nombre: 'Freddy Peñafiel' },
+        { src: 'img/guayaquil-06.jpg', pos: '50% 32%', nombre: 'Fadua Salinas' },
+        { src: 'img/guayaquil-07.jpg', pos: '50% 45%', nombre: 'Evelyn Espinoza' },
+        { src: 'img/guayaquil-08.jpg', pos: 'center', nombre: 'Diego Rodriguez' },
+        { src: 'img/guayaquil-09.jpg', pos: '50% 30%', nombre: 'Daniela Zambrano' },
+        { src: 'img/guayaquil-10.jpg', pos: '50% 25%', nombre: 'Christian Gracia' },
+        { src: 'img/guayaquil-11.jpg', pos: 'center', nombre: 'Carolina Naula' },
+        { src: 'img/guayaquil-12.jpg', pos: 'center', nombre: 'Claudia Herrera' },
+        { src: 'img/guayaquil-13.jpg', pos: '50% 45%', nombre: 'Carol Gavilanez' },
+        { src: 'img/guayaquil-14.jpg', pos: 'center', nombre: 'Yahimara Narvaez' },
+        { src: 'img/guayaquil-15.jpg', pos: 'center', nombre: 'Mayra Ruiz' },
+        { src: 'img/guayaquil-16.jpg', pos: '50% 30%', nombre: 'Veronica Paredes' },
+        { src: 'img/guayaquil-17.jpg', pos: 'center', nombre: 'Paulette Freire' },
+        { src: 'img/guayaquil-18.jpg', pos: 'center', nombre: 'Mayra Mera' },
+        { src: 'img/guayaquil-19.jpg', pos: 'center', nombre: 'Max Wirz' },
+        { src: 'img/guayaquil-20.jpg', pos: 'center', nombre: 'Marlon Garcia' },
+        { src: 'img/guayaquil-21.jpg', pos: '50% 45%', nombre: 'Maria Jose Cabrera' },
+        { src: 'img/guayaquil-22.jpg', pos: '50% 42%', nombre: 'Maria Fernanda Pijal' },
+        { src: 'img/guayaquil-23.jpg', pos: 'center', nombre: 'Maria Luisa Cherrez' }
       ],
       cuenca: [
-        { src: 'img/cuenca-01.jpg', pos: 'center 28%', nombre: 'Francisco Bravo' },
-        { src: 'img/cuenca-02.jpg', pos: 'center 40%', nombre: 'Katy Quintuña' },
-        { src: 'img/cuenca-03.jpg', pos: '42% center', nombre: 'Daniela Barriga' },
-        { src: 'img/cuenca-04.jpg', pos: 'center 32%', nombre: 'Claudia Recalde' }
+        { src: 'img/cuenca-01.jpg', pos: '50% 20%', nombre: 'Francisco Bravo' },
+        { src: 'img/cuenca-02.jpg', pos: '50% 35%', nombre: 'Katy Quintuña' },
+        { src: 'img/cuenca-03.jpg', pos: 'center', nombre: 'Daniela Barriga' },
+        { src: 'img/cuenca-04.jpg', pos: '50% 35%', nombre: 'Claudia Recalde' }
       ]
     };
     var cityFotos = fotos[city] || [];
@@ -572,7 +570,8 @@ class Component extends DCLogic {
           noPhoto: !foto,
           src: foto ? foto.src : '',
           alt: 'Foto ' + (idx + 1) + ' de ' + cityLabel,
-          marcoStyle: 'position:relative;overflow:hidden;background:#0A2463;aspect-ratio:' + ((foto && foto.ar) || '4 / 5') + ';',
+          marcoStyle: 'position:relative;overflow:hidden;background:#0A2463;aspect-ratio:4 / 3;',
+          imgStyle: 'display:block;width:100%;height:100%;object-fit:cover;object-position:' + (foto ? foto.pos : 'center') + ';',
           selected: selected,
           disabled: submitted || !open || selected,
           btnLabel: submitted ? (selected ? '✓ Su voto' : 'Voto enviado') : (!open ? 'Votación cerrada' : (selected ? '✓ Elegida' : (myVote ? 'Cambiar a esta foto' : 'Elegir esta foto'))),
@@ -615,7 +614,8 @@ class Component extends DCLogic {
             rank: r + 1,
             title: tituloFoto(pid),
             hasPhoto: !!f, noPhoto: !f, src: f ? f.src : '',
-            marcoStyle: 'position:relative;overflow:hidden;background:#0A2463;aspect-ratio:4 / 5;',
+            marcoStyle: 'position:relative;overflow:hidden;background:#0A2463;aspect-ratio:4 / 3;',
+            imgStyle: 'display:block;width:100%;height:100%;object-fit:cover;object-position:' + (f ? f.pos : 'center') + ';',
             votesLabel: v + (v === 1 ? ' voto' : ' votos'),
             shareLabel: Math.round(v / total * 100) + '% de los votos de ' + c.label,
             barStyle: 'height:100%;border-radius:999px;background:#0B5AA6;width:' + Math.round(v / total * 100) + '%;'
@@ -721,7 +721,7 @@ class Component extends DCLogic {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       },
       showTop: this.props.mostrarTop3 ?? true, top: top,
-      gridStyle: 'display:grid;gap:24px;grid-template-columns:repeat(' + (city === 'quito' ? 3 : 4) + ', minmax(0, 1fr));',
+      gridStyle: 'display:grid;gap:24px;grid-template-columns:repeat(3, minmax(0, 1fr));',
       submitted: submitted, resumen: resumen, cantSend: !(canSend || (submitted && open)),
       sendLabel: submitted ? (open ? 'Votar otra vez' : '✓ Voto enviado') : 'Enviar voto',
       sendHint: sendHint,
