@@ -14,7 +14,7 @@ async function prepararTabla(db) {
   if (tablaLista) return;
   await db.prepare(
     // Cada voto es una fila nueva: una misma persona puede votar varias veces
-    "CREATE TABLE IF NOT EXISTS votos_oficial (id INTEGER PRIMARY KEY AUTOINCREMENT, votante TEXT NOT NULL, quito TEXT NOT NULL, guayaquil TEXT NOT NULL, cuenca TEXT NOT NULL, creado TEXT NOT NULL DEFAULT (datetime('now')))"
+    "CREATE TABLE IF NOT EXISTS votos_publico (id INTEGER PRIMARY KEY AUTOINCREMENT, votante TEXT NOT NULL, quito TEXT NOT NULL, guayaquil TEXT NOT NULL, cuenca TEXT NOT NULL, creado TEXT NOT NULL DEFAULT (datetime('now')))"
   ).run();
   tablaLista = true;
 }
@@ -22,7 +22,7 @@ async function prepararTabla(db) {
 async function conteo(db) {
   const c = { quito: {}, guayaquil: {}, cuenca: {} };
   for (const k of CIUDADES) {
-    const { results } = await db.prepare(`SELECT ${k} AS foto, COUNT(*) AS n FROM votos_oficial WHERE ${k} <> '' GROUP BY ${k}`).all();
+    const { results } = await db.prepare(`SELECT ${k} AS foto, COUNT(*) AS n FROM votos_publico WHERE ${k} <> '' GROUP BY ${k}`).all();
     for (const r of results) c[k][r.foto] = r.n;
   }
   return c;
@@ -36,7 +36,7 @@ async function votar(request, db) {
     CIUDADES.every((k) => d[k] == null || d[k] === '' || new RegExp('^' + k + '-\\d{1,3}$').test(d[k])) &&
     CIUDADES.some((k) => !!d[k]);
   if (!valido) return json({ ok: false, motivo: 'datos' }, 400);
-  await db.prepare('INSERT INTO votos_oficial (votante, quito, guayaquil, cuenca) VALUES (?, ?, ?, ?)')
+  await db.prepare('INSERT INTO votos_publico (votante, quito, guayaquil, cuenca) VALUES (?, ?, ?, ?)')
     .bind(d.votante, d.quito || '', d.guayaquil || '', d.cuenca || '').run();
   return json({ ok: true, counts: await conteo(db) });
 }
@@ -60,7 +60,7 @@ async function exportar(url, env) {
   const clave = url.searchParams.get('clave') || '';
   if (!env.CLAVE_ADMIN || clave !== env.CLAVE_ADMIN) return new Response('Clave incorrecta', { status: 401 });
   const { results } = await env.DB.prepare(
-    "SELECT datetime(creado, '-5 hours') AS creado, votante, quito, guayaquil, cuenca FROM votos_oficial ORDER BY id"
+    "SELECT datetime(creado, '-5 hours') AS creado, votante, quito, guayaquil, cuenca FROM votos_publico ORDER BY id"
   ).all();
   const filas = [['Fecha y hora (Ecuador)', 'ID dispositivo', 'Quito', 'Guayaquil', 'Cuenca']]
     .concat(results.map((r) => [r.creado, r.votante, foto(r.quito), foto(r.guayaquil), foto(r.cuenca)]));

@@ -1,5 +1,5 @@
 -- Referencia: el Worker crea esta tabla solo. Cada voto es una fila (se puede votar varias veces).
-CREATE TABLE IF NOT EXISTS votos_oficial (
+CREATE TABLE IF NOT EXISTS votos_publico (
   id        INTEGER PRIMARY KEY AUTOINCREMENT,
   votante   TEXT NOT NULL,
   quito     TEXT NOT NULL,
