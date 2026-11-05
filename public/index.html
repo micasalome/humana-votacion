@@ -721,7 +721,7 @@ class Component extends DCLogic {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       },
       showTop: this.props.mostrarTop3 ?? true, top: top,
-      gridStyle: 'display:grid;gap:24px;grid-template-columns:repeat(3, minmax(0, 1fr));',
+      gridStyle: 'display:grid;gap:24px;grid-template-columns:repeat(' + (city === 'quito' ? 3 : 4) + ', minmax(0, 1fr));',
       submitted: submitted, resumen: resumen, cantSend: !(canSend || (submitted && open)),
       sendLabel: submitted ? (open ? 'Votar otra vez' : '✓ Voto enviado') : 'Enviar voto',
       sendHint: sendHint,
