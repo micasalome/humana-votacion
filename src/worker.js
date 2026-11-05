@@ -65,9 +65,14 @@ async function verificarTurnstile(token, ip, secreto) {
 
 async function conteo(db) {
   const c = { quito: {}, guayaquil: {}, cuenca: {} };
-  for (const k of CIUDADES) {
-    const { results } = await db.prepare(`SELECT ${k} AS foto, COUNT(*) AS n FROM votos_campana WHERE ${k} <> '' GROUP BY ${k}`).all();
-    for (const r of results) c[k][r.foto] = r.n;
+  // Se suman los votos de antes del lanzamiento (votos_publico, 12:55-15:09 del 5 nov) y los actuales (votos_campana)
+  for (const tabla of ['votos_publico', 'votos_campana']) {
+    for (const k of CIUDADES) {
+      let results = [];
+      try { ({ results } = await db.prepare(`SELECT ${k} AS foto, COUNT(*) AS n FROM ${tabla} WHERE ${k} <> '' GROUP BY ${k}`).all()); }
+      catch (e) { if (tabla === 'votos_campana') throw e; } // si la tabla vieja no existe, se ignora
+      for (const r of results) c[k][r.foto] = (c[k][r.foto] || 0) + r.n;
+    }
   }
   return c;
 }
@@ -135,9 +140,16 @@ const celda = (v) => '"' + String(v).replace(/"/g, '""') + '"';
 async function exportar(url, env) {
   const clave = url.searchParams.get('clave') || '';
   if (!env.CLAVE_ADMIN || clave !== env.CLAVE_ADMIN) return new Response('Clave incorrecta', { status: 401 });
-  const { results } = await env.DB.prepare(
+  let antes = [];
+  try {
+    ({ results: antes } = await env.DB.prepare(
+      "SELECT datetime(creado, '-5 hours') AS creado, votante, quito, guayaquil, cuenca, '' AS conexion, '' AS navegador, '' AS pais, 0 AS verificado FROM votos_publico ORDER BY id"
+    ).all());
+  } catch (e) { antes = []; }
+  const { results: ahora } = await env.DB.prepare(
     "SELECT datetime(creado, '-5 hours') AS creado, votante, quito, guayaquil, cuenca, conexion, navegador, pais, verificado FROM votos_campana ORDER BY id"
   ).all();
+  const results = antes.concat(ahora);
   const filas = [['Fecha y hora (Ecuador)', 'ID dispositivo', 'Quito', 'Guayaquil', 'Cuenca', 'Conexión', 'País', 'Verificado anti-robot', 'Navegador']]
     .concat(results.map((r) => [r.creado, r.votante, foto(r.quito), foto(r.guayaquil), foto(r.cuenca), r.conexion || '', r.pais || '', r.verificado ? 'Sí' : 'No', r.navegador || '']));
   const csv = '﻿' + filas.map((f) => f.map(celda).join(';')).join('\r\n');
