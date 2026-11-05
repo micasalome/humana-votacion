@@ -36,14 +36,13 @@ async function prepararTabla(db) {
     // Cada voto es una fila nueva: una misma persona puede votar varias veces
     "CREATE TABLE IF NOT EXISTS votos_campana (id INTEGER PRIMARY KEY AUTOINCREMENT, votante TEXT NOT NULL, quito TEXT NOT NULL, guayaquil TEXT NOT NULL, cuenca TEXT NOT NULL, creado TEXT NOT NULL DEFAULT (datetime('now')))"
   ).run();
-  // Columnas nuevas para detectar robots (se agregan sin tocar los votos existentes)
-  const { results: cols } = await db.prepare('PRAGMA table_info(votos_campana)').all();
-  const tiene = new Set(cols.map((c) => c.name));
+  // Columnas nuevas para detectar robots (se agregan sin tocar los votos existentes).
+  // Si algo falla aquí, la votación sigue funcionando como antes.
   for (const [col, def] of [['conexion', "TEXT NOT NULL DEFAULT ''"], ['navegador', "TEXT NOT NULL DEFAULT ''"], ['pais', "TEXT NOT NULL DEFAULT ''"], ['verificado', 'INTEGER NOT NULL DEFAULT 0']]) {
-    if (!tiene.has(col)) await db.prepare(`ALTER TABLE votos_campana ADD COLUMN ${col} ${def}`).run();
+    try { await db.prepare(`ALTER TABLE votos_campana ADD COLUMN ${col} ${def}`).run(); } catch (e) { /* ya existe */ }
   }
-  await db.prepare('CREATE INDEX IF NOT EXISTS idx_campana_conexion ON votos_campana (conexion, creado)').run();
-  await db.prepare('CREATE INDEX IF NOT EXISTS idx_campana_votante ON votos_campana (votante, creado)').run();
+  try { await db.prepare('CREATE INDEX IF NOT EXISTS idx_campana_conexion ON votos_campana (conexion, creado)').run(); } catch (e) {}
+  try { await db.prepare('CREATE INDEX IF NOT EXISTS idx_campana_votante ON votos_campana (votante, creado)').run(); } catch (e) {}
   tablaLista = true;
 }
 
@@ -104,11 +103,17 @@ async function votar(request, env) {
     }
     return max;
   };
-  const seg = Math.max(await espera('votante', d.votante, LIMITES.dispositivo), await espera('conexion', conexion, LIMITES.conexion));
+  let seg = 0;
+  try { seg = Math.max(await espera('votante', d.votante, LIMITES.dispositivo), await espera('conexion', conexion, LIMITES.conexion)); } catch (e) { seg = 0; }
   if (seg > 0) return json({ ok: false, motivo: 'rapido', espera: Math.max(1, seg) }, 429);
 
-  await db.prepare('INSERT INTO votos_campana (votante, quito, guayaquil, cuenca, conexion, navegador, pais, verificado) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
-    .bind(d.votante, d.quito, d.guayaquil, d.cuenca, conexion, navegador, pais, verificado).run();
+  try {
+    await db.prepare('INSERT INTO votos_campana (votante, quito, guayaquil, cuenca, conexion, navegador, pais, verificado) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+      .bind(d.votante, d.quito, d.guayaquil, d.cuenca, conexion, navegador, pais, verificado).run();
+  } catch (e) {
+    await db.prepare('INSERT INTO votos_campana (votante, quito, guayaquil, cuenca) VALUES (?, ?, ?, ?)')
+      .bind(d.votante, d.quito, d.guayaquil, d.cuenca).run();
+  }
   return json({ ok: true, counts: await conteo(db) });
 }
 
