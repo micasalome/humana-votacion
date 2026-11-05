@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Humana para humanos – Vota por tu foto favorita</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&amp;family=Fredoka:wght@600;700&amp;family=Quicksand:wght@500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#0B5AA6}a:hover{color:#083F7E}
+button{font-family:inherit}
+@keyframes titilar{0%,100%{opacity:.3;transform:scale(.7)}50%{opacity:1;transform:scale(1.35)}}
+@keyframes destello{0%,100%{opacity:.5;transform:scale(.7) rotate(0deg)}50%{opacity:1;transform:scale(1.2) rotate(25deg)}}
+@keyframes fugaz{0%{transform:rotate(-32deg) translateX(0);opacity:0}3%{opacity:1}12%{transform:rotate(-32deg) translateX(-700px);opacity:0}100%{transform:rotate(-32deg) translateX(-700px);opacity:0}}
+@keyframes flotarRobot{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+@keyframes halo{0%,100%{opacity:.35;transform:scale(1)}50%{opacity:.55;transform:scale(1.08)}}
+@keyframes flotar{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+@media (max-width: 1100px){.hero-robot{position:relative !important;left:auto !important;top:auto !important;width:230px !important;margin:28px auto 0}.burbuja-robot{left:70% !important;font-size:15px !important}}
+@media (max-width: 760px){.pill-vivo{position:static !important;margin:12px auto 0}header{flex-direction:column;align-items:center !important}}
+@media (max-width: 600px){.cinta{padding:10px 30px 12px !important}.cinta span{font-size:22px !important}.chispa{display:none}.sub-titulo{font-size:24px !important}.sub-titulo br{display:none}.cta-pill{border-radius:28px !important;padding:14px 16px !important;gap:10px !important}.cta-pill p{font-size:19px !important}.cta-pill span[aria-hidden]{font-size:36px !important}}
+@media (prefers-reduced-motion: reduce){*{animation:none !important}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<template id="plantilla">
+<div style="position: relative; overflow: hidden; min-height: 2050px; font-family: 'Quicksand', system-ui, sans-serif; color: #0A3566; background: radial-gradient(ellipse 80% 50% at 70% 8%, rgba(70, 140, 255, 0.35) 0%, rgba(70, 140, 255, 0) 70%), linear-gradient(180deg, #040C26 0%, #081B4E 28%, #0B2C72 58%, #12469E 100%)">
+
+  <div aria-hidden="true" style="position: absolute; inset: 0; pointer-events: none">
+    <sc-for list="{{estrellas}}" as="e" hint-placeholder-count="0">
+      <span style="{{e.style}}"></span>
+    </sc-for>
+    <sc-for list="{{destellos}}" as="d" hint-placeholder-count="0">
+      <span style="{{d.wrap}}">
+        <span style="{{d.halo}}"></span>
+        <svg style="{{d.style}}" width="24" height="24" viewBox="0 0 24 24"><path d="M12 0 C13 8 16 11 24 12 C16 13 13 16 12 24 C11 16 8 13 0 12 C8 11 11 8 12 0 Z" fill="#ffffff"></path></svg>
+      </span>
+    </sc-for>
+    <span style="position: absolute; left: 78%; top: 90px; width: 180px; height: 2px; border-radius: 2px; background: linear-gradient(90deg, #ffffff, rgba(160, 210, 255, 0.6) 30%, rgba(160, 210, 255, 0)); box-shadow: 0 0 8px #ffffff; transform-origin: left center; animation: fugaz 9s linear 2s infinite; opacity: 0"></span>
+    <span style="position: absolute; left: 40%; top: 40px; width: 140px; height: 2px; border-radius: 2px; background: linear-gradient(90deg, #ffffff, rgba(160, 210, 255, 0.6) 30%, rgba(160, 210, 255, 0)); box-shadow: 0 0 8px #ffffff; transform-origin: left center; animation: fugaz 13s linear 6s infinite; opacity: 0"></span>
+    <span style="position: absolute; left: 95%; top: 1100px; width: 160px; height: 2px; border-radius: 2px; background: linear-gradient(90deg, #ffffff, rgba(160, 210, 255, 0.6) 30%, rgba(160, 210, 255, 0)); box-shadow: 0 0 8px #ffffff; transform-origin: left center; animation: fugaz 11s linear 4s infinite; opacity: 0"></span>
+  </div>
+  <div aria-hidden="true" style="position: absolute; top: 520px; left: -160px; width: 720px; height: 240px; border-radius: 50%; background: #6FA8FF; opacity: 0.14; filter: blur(60px)"></div>
+  <div aria-hidden="true" style="position: absolute; top: 1300px; right: -120px; width: 760px; height: 280px; border-radius: 50%; background: #6FA8FF; opacity: 0.12; filter: blur(70px)"></div>
+
+  <div style="position: relative; max-width: 1200px; margin: 0 auto; padding: 0 24px 64px; display: flex; flex-direction: column; gap: 48px">
+
+    <header style="position: relative; display: flex; justify-content: center; align-items: flex-start; min-height: 110px">
+      <div style="background: #ffffff; border-radius: 0 0 56px 56px; padding: 20px 52px 22px; box-shadow: 0 0 0 6px rgba(140, 200, 255, 0.18), 0 18px 40px rgba(0, 10, 40, 0.5); display: flex">
+        <img src="img/logo-humana.png" alt="humana · Cobertura Médica Integral" style="height: 64px; width: auto; display: block">
+      </div>
+      <div class="pill-vivo" style="position: absolute; right: 0; top: 30px; display: flex; align-items: center; gap: 12px; color: #ffffff; font-weight: 700; font-size: 20px; background: rgba(6, 22, 70, 0.6); border: 2px solid #5FB6FF; border-radius: 999px; padding: 12px 26px; box-shadow: 0 0 18px rgba(95, 182, 255, 0.55), inset 0 0 12px rgba(95, 182, 255, 0.25)">
+        <span aria-hidden="true" style="width: 14px; height: 14px; border-radius: 50%; background: #3DF29A; box-shadow: 0 0 0 4px rgba(61, 242, 154, 0.25), 0 0 12px #3DF29A"></span>
+        Votación en vivo
+      </div>
+    </header>
+
+    <section style="position: relative; display: flex; flex-direction: column; align-items: center; margin-top: -24px">
+      <div aria-hidden="true" style="position: absolute; left: -420px; right: -420px; bottom: -140px; height: 340px; pointer-events: none; z-index: 0">
+        <sc-for list="{{nubes}}" as="n" hint-placeholder-count="0">
+          <span style="{{n.style}}"></span>
+        </sc-for>
+      </div>
+
+      <div class="hero-centro" style="position: relative; z-index: 1; width: 100%; max-width: 680px; display: flex; flex-direction: column; align-items: center; gap: 22px; text-align: center">
+        <div style="display: flex; align-items: center; gap: 14px">
+          <svg class="chispa" aria-hidden="true" width="44" height="60" viewBox="0 0 44 60" style="filter: drop-shadow(0 0 6px #6FD6FF)"><path d="M38 8 L22 20 M40 30 L16 30 M38 52 L22 40" stroke="#9BE7FF" stroke-width="5" stroke-linecap="round" fill="none"></path></svg>
+          <div class="cinta" style="position: relative; padding: 14px 64px 16px">
+            <svg aria-hidden="true" viewBox="0 0 100 100" preserveAspectRatio="none" style="position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 0 8px rgba(110, 200, 255, 0.8))"><path d="M1 4 H99 L93 50 L99 96 H1 L7 50 Z" fill="rgba(8, 32, 96, 0.85)" stroke="#8FD8FF" stroke-width="2.5" vector-effect="non-scaling-stroke" stroke-linejoin="round"></path></svg>
+            <span style="position: relative; display: block; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 32px; line-height: 1.12; letter-spacing: 1px; color: #ffffff; text-shadow: 0 0 10px rgba(150, 215, 255, 0.7)">VOTA POR TU<br>FOTO FAVORITA</span>
+          </div>
+          <svg class="chispa" aria-hidden="true" width="44" height="60" viewBox="0 0 44 60" style="transform: scaleX(-1); filter: drop-shadow(0 0 6px #6FD6FF)"><path d="M38 8 L22 20 M40 30 L16 30 M38 52 L22 40" stroke="#9BE7FF" stroke-width="5" stroke-linecap="round" fill="none"></path></svg>
+        </div>
+
+        <h1 aria-label="Humana para humanos como tú" style="margin: 0; display: flex; flex-direction: column; align-items: center; font-family: 'Fredoka', 'Baloo 2', sans-serif; font-weight: 700; line-height: 0.9; animation: flotar 6s ease-in-out infinite">
+          <sc-for list="{{titulo}}" as="fila" hint-placeholder-count="4">
+            <span aria-hidden="true" style="display: flex; align-items: flex-end; white-space: nowrap">
+              <sc-for list="{{fila.letras}}" as="l" hint-placeholder-count="6">
+                <span style="{{l.style}}">{{l.ch}}</span>
+              </sc-for>
+            </span>
+          </sc-for>
+        </h1>
+
+        <div style="display: flex; align-items: center; gap: 16px; margin-top: 6px">
+          <svg class="chispa" aria-hidden="true" width="36" height="50" viewBox="0 0 44 60" style="flex: none; filter: drop-shadow(0 0 6px #6FD6FF)"><path d="M38 8 L22 20 M40 30 L16 30 M38 52 L22 40" stroke="#9BE7FF" stroke-width="5" stroke-linecap="round" fill="none"></path></svg>
+          <span aria-hidden="true" style="font-size: 52px; line-height: 1">📸</span>
+          <p class="sub-titulo" style="margin: 0; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 34px; line-height: 1.15; color: #ffffff; text-shadow: 0 0 14px rgba(120, 190, 255, 0.55), 0 3px 0 rgba(4, 20, 60, 0.6)">¡Demasiada diversión <br>para un solo algoritmo!</p>
+          <svg class="chispa" aria-hidden="true" width="36" height="50" viewBox="0 0 44 60" style="flex: none; transform: scaleX(-1); filter: drop-shadow(0 0 6px #6FD6FF)"><path d="M38 8 L22 20 M40 30 L16 30 M38 52 L22 40" stroke="#9BE7FF" stroke-width="5" stroke-linecap="round" fill="none"></path></svg>
+        </div>
+
+        <p style="margin: 0; font-size: 22px; font-weight: 600; line-height: 1.4; color: #ffffff; text-shadow: 0 1px 3px rgba(0, 10, 40, 0.6)">Las selfies están listas, pero nuestro robot no puede decidir.</p>
+
+        <div class="cta-pill" style="display: flex; align-items: center; gap: 18px; padding: 14px 34px 14px 22px; border-radius: 999px; background: rgba(6, 22, 70, 0.6); border: 2px solid #5FB6FF; box-shadow: 0 0 22px rgba(95, 182, 255, 0.55), inset 0 0 14px rgba(95, 182, 255, 0.25)">
+          <span aria-hidden="true" style="font-size: 48px; line-height: 1">🤖</span>
+          <p style="margin: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 25px; line-height: 1.2; color: #ffffff; font-weight: 500">
+            <span>¡Activa tu lado más humano y <strong style="font-weight: 700">vota</strong></span>
+            <strong style="font-family: 'Fredoka', sans-serif; font-weight: 700; background: rgba(95, 182, 255, 0.2); border: 1.5px solid #8FD8FF; border-radius: 999px; padding: 2px 18px; box-shadow: 0 0 10px rgba(95, 182, 255, 0.45)">por tu favorita en cada ciudad!</strong>
+          </p>
+        </div>
+
+        <div role="timer" aria-live="off" style="margin-top: 10px; width: 100%; max-width: 560px; background: rgba(6, 22, 70, 0.6); border: 2px solid rgba(143, 216, 255, 0.6); border-radius: 28px; padding: 18px 22px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 0 20px rgba(95, 182, 255, 0.3)">
+          <sc-if value="{{open}}" hint-placeholder-val="{{ true }}">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap">
+              <span style="font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 20px; color: #ffffff">La votación cierra en</span>
+              <span style="font-weight: 700; font-size: 15px; color: #BFE3FF">Miércoles 11 de noviembre · 5:00 p. m.</span>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px">
+              <sc-for list="{{countdown}}" as="u" hint-placeholder-count="4">
+                <div style="background: rgba(95, 182, 255, 0.16); border: 1.5px solid #8FD8FF; border-radius: 18px; padding: 10px 6px 8px; display: flex; flex-direction: column; align-items: center; min-width: 64px">
+                  <span style="font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 42px; line-height: 1; color: #ffffff; font-variant-numeric: tabular-nums; text-shadow: 0 0 12px rgba(150, 215, 255, 0.8)">{{u.value}}</span>
+                  <span style="font-size: 13px; font-weight: 700; color: #BFE3FF; text-transform: uppercase; letter-spacing: 1px">{{u.label}}</span>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{closed}}" hint-placeholder-val="{{ false }}">
+            <div style="display: flex; flex-direction: column; gap: 4px; text-align: center">
+              <span style="font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 28px; color: #ffffff">La votación ha cerrado</span>
+              <span style="font-weight: 600; font-size: 15px; color: #BFE3FF">Cerró el miércoles 11 de noviembre a las 5:00 p. m. ¡Gracias por participar!</span>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+
+      <div class="hero-robot" style="position: absolute; z-index: 2; left: -150px; top: 70px; width: 360px">
+        <div aria-hidden="true" style="position: absolute; left: -10%; top: 4%; width: 120%; height: 70%; border-radius: 50%; background: radial-gradient(circle, rgba(90, 160, 255, 0.55) 0%, rgba(60, 120, 255, 0.2) 45%, rgba(60, 120, 255, 0) 70%); animation: halo 5s ease-in-out infinite"></div>
+        <div aria-hidden="true" style="position: absolute; left: 8%; bottom: -14px; width: 84%; height: 46px; border-radius: 50%; background: radial-gradient(ellipse, rgba(150, 210, 255, 0.7) 0%, rgba(90, 160, 255, 0.25) 45%, rgba(90, 160, 255, 0) 72%); filter: blur(2px)"></div>
+        <div style="position: relative; animation: flotarRobot 5s ease-in-out infinite">
+          <img src="img/robot.png" alt="Robot de la campaña Humana presentando la votación" style="display: block; width: 100%; height: auto; filter: drop-shadow(0 0 1.5px rgba(220, 240, 255, 0.95)) drop-shadow(0 0 18px rgba(120, 180, 255, 0.75)) drop-shadow(0 30px 30px rgba(0, 0, 0, 0.5))">
+          <div class="burbuja-robot" style="position: absolute; left: 50%; top: -5%; white-space: nowrap; background: #ffffff; color: #0B3A9A; border-radius: 20px 20px 20px 4px; padding: 10px 16px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 17px; box-shadow: 0 0 0 3px rgba(143, 216, 255, 0.6), 0 12px 24px rgba(0, 10, 40, 0.45)">¡Ayúdame a elegir!</div>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="titulo-votacion" style="position: relative; z-index: 3; background: rgba(255, 255, 255, 0.94); backdrop-filter: blur(12px); border: 1.5px solid rgba(255, 255, 255, 0.9); border-radius: 36px; padding: 32px; display: flex; flex-direction: column; gap: 28px; box-shadow: 0 24px 60px rgba(6, 47, 99, 0.18)">
+      <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 20px">
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <h2 id="titulo-votacion" style="margin: 0; font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 40px; line-height: 1; color: #0B5AA6">Elige tu ciudad y vota</h2>
+          <p style="margin: 0; font-size: 17px; font-weight: 600; color: #2D4F78">Elige una foto en cada ciudad y luego envía tu voto.</p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 15px; color: #0A3566">
+          <span>Tu progreso</span>
+          <div style="display: flex; gap: 6px">
+            <sc-for list="{{tabs}}" as="t" hint-placeholder-count="3">
+              <span style="{{t.dotStyle}}" title="{{t.label}}"></span>
+            </sc-for>
+          </div>
+          <span>{{votedCount}} de 3 elegidas</span>
+        </div>
+      </div>
+
+      <div role="tablist" aria-label="Ciudades" style="display: flex; flex-wrap: wrap; gap: 12px">
+        <sc-for list="{{tabs}}" as="t" hint-placeholder-count="3">
+          <button role="tab" aria-selected="{{t.active}}" onClick="{{t.pick}}" style="{{t.tabStyle}}">
+            {{t.label}}
+            <sc-if value="{{t.voted}}" hint-placeholder-val="{{ false }}">
+              <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>
+            </sc-if>
+          </button>
+        </sc-for>
+      </div>
+
+      <sc-if value="{{showPickMsg}}" hint-placeholder-val="{{ false }}">
+        <div role="status" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; background: #E3F2FD; color: #0A3566; border: 2px solid #0B5AA6; border-radius: 20px; padding: 14px 18px 14px 22px; font-weight: 700; font-size: 17px">
+          <span>{{pickMsg}}</span>
+          <sc-if value="{{hasNext}}" hint-placeholder-val="{{ false }}">
+            <button onClick="{{goNext}}" style="min-height: 44px; padding: 0 22px; border-radius: 999px; border: 0; background: #0B5AA6; color: #ffffff; font-weight: 700; font-size: 16px; cursor: pointer">Ir a {{nextLabel}}</button>
+          </sc-if>
+        </div>
+      </sc-if>
+      <sc-if value="{{submitted}}" hint-placeholder-val="{{ false }}">
+        <div role="status" style="display: flex; align-items: center; gap: 14px; background: #0B5AA6; color: #ffffff; border-radius: 20px; padding: 16px 22px; font-weight: 700; font-size: 17px">
+          <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M7.5 12.5l3 3 6-6.5"></path></svg>
+          <span>¡Gracias! Tu voto por Quito, Guayaquil y Cuenca fue enviado.</span>
+        </div>
+      </sc-if>
+
+      <div style="{{gridStyle}}">
+        <sc-for list="{{cards}}" as="card" hint-placeholder-count="6">
+          <article style="{{card.cardStyle}}">
+            <sc-if value="{{card.hasPhoto}}" hint-placeholder-val="{{ false }}">
+              <img src="{{card.src}}" alt="{{card.alt}}" loading="lazy" style="{{card.imgStyle}}">
+            </sc-if>
+            <sc-if value="{{card.noPhoto}}" hint-placeholder-val="{{ true }}">
+              <div style="aspect-ratio: 4 / 5; background: linear-gradient(160deg, #DDF0FD 0%, #B5DDF8 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: #2D6CA8">
+                <svg aria-hidden="true" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a2 2 0 0 1 2-2h2l1.5-2h7L17 6h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                <span style="font-weight: 700; font-size: 15px">[Foto del participante]</span>
+              </div>
+            </sc-if>
+            <div style="padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 14px">
+              <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px">
+                <span style="font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 22px; color: #0A3566">{{card.title}}</span>
+                <span style="font-size: 13px; font-weight: 700; color: #0B5AA6; background: #E3F2FD; border-radius: 999px; padding: 4px 10px">{{cityLabel}}</span>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 6px">
+                <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px">
+                  <span style="font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 22px; color: #0B5AA6">{{card.pctLabel}}</span>
+                  <span style="font-size: 14px; font-weight: 600; color: #2D4F78">{{card.votosLabel}}</span>
+                </div>
+                <div style="height: 10px; border-radius: 999px; background: #E3F2FD; overflow: hidden">
+                  <div style="{{card.barStyle}}"></div>
+                </div>
+              </div>
+              <button onClick="{{card.vote}}" disabled="{{card.disabled}}" aria-pressed="{{card.selected}}" style="{{card.btnStyle}}">{{card.btnLabel}}</button>
+            </div>
+          </article>
+        </sc-for>
+      </div>
+
+      <div style="position: sticky; bottom: 16px; z-index: 2; background: #0A2463; color: #ffffff; border-radius: 24px; padding: 18px 20px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; box-shadow: 0 18px 40px rgba(4, 12, 38, 0.45)">
+        <div style="display: flex; flex-wrap: wrap; gap: 10px">
+          <sc-for list="{{resumen}}" as="r" hint-placeholder-count="3">
+            <div style="{{r.style}}">
+              <span style="font-size: 13px; font-weight: 600; opacity: 0.85">{{r.label}}</span>
+              <span style="font-size: 15px; font-weight: 700">{{r.value}}</span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex: 1 1 220px">
+          <button onClick="{{send}}" disabled="{{cantSend}}" style="{{sendStyle}}">{{sendLabel}}</button>
+          <span style="font-size: 14px; font-weight: 600; color: #CFE3FA; text-align: right">{{sendHint}}</span>
+        </div>
+      </div>
+    </section>
+
+    <sc-if value="{{showTop}}" hint-placeholder-val="{{ true }}">
+      <section aria-labelledby="titulo-top" style="position: relative; z-index: 3; display: flex; flex-direction: column; gap: 24px">
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 12px">
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <h2 id="titulo-top" style="margin: 0; font-family: 'Fredoka', 'Baloo 2', sans-serif; font-weight: 700; font-size: 44px; line-height: 1; color: #ffffff; text-shadow: 0 0 24px rgba(110, 170, 255, 0.6)">Top 3 en vivo</h2>
+            <p style="margin: 0; font-size: 17px; font-weight: 600; color: #CFE3FA">La foto más votada de Quito, Guayaquil y Cuenca.</p>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px; color: #ffffff; font-weight: 700; font-size: 15px; background: rgba(255, 255, 255, 0.1); border: 1.5px solid rgba(255, 255, 255, 0.35); border-radius: 999px; padding: 8px 16px">
+            <span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 50%; background: #7CF0B0; box-shadow: 0 0 0 4px rgba(124, 240, 176, 0.3)"></span>
+            Votos en vivo
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px">
+          <sc-for list="{{top}}" as="col" hint-placeholder-count="3">
+            <article style="background: #ffffff; border-radius: 28px; padding: 22px; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 18px 40px rgba(4, 12, 38, 0.35)">
+              <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px">
+                <h3 style="margin: 0; font-family: 'Fredoka', 'Baloo 2', sans-serif; font-weight: 700; font-size: 28px; color: #0B5AA6">{{col.label}}</h3>
+                <span style="font-size: 14px; font-weight: 700; color: #2D4F78">{{col.totalLabel}}</span>
+              </div>
+              <sc-if value="{{col.empty}}" hint-placeholder-val="{{ false }}">
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: 300px; border: 2px dashed #B5D3F2; border-radius: 20px; color: #2D4F78; text-align: center; padding: 16px">
+                  <svg aria-hidden="true" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"></path><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"></path></svg>
+                  <span style="font-weight: 700; font-size: 16px">Aún no hay votos en {{col.label}}</span>
+                </div>
+              </sc-if>
+              <sc-for list="{{col.rows}}" as="r" hint-placeholder-count="1">
+                <div style="display: flex; flex-direction: column; gap: 14px">
+                  <div style="position: relative; border-radius: 20px; overflow: hidden; box-shadow: 0 0 0 4px #F5C542">
+                    <img src="{{r.src}}" alt="{{r.title}} de {{col.label}}, la más votada" style="{{r.imgStyle}}">
+                    <span style="position: absolute; top: 12px; left: 12px; display: inline-flex; align-items: center; gap: 6px; background: #F5C542; color: #5A3E00; border-radius: 999px; padding: 6px 12px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 15px; box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25)">
+                      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"></path><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"></path></svg>
+                      Va ganando
+                    </span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px">
+                    <span style="font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 22px; color: #0A3566">{{r.title}}</span>
+                    <span style="font-weight: 700; font-size: 17px; color: #0B5AA6">{{r.votesLabel}}</span>
+                  </div>
+                  <div style="display: flex; flex-direction: column; gap: 6px">
+                    <div style="height: 10px; border-radius: 999px; background: #E3F2FD; overflow: hidden">
+                      <div style="{{r.barStyle}}"></div>
+                    </div>
+                    <span style="font-size: 14px; font-weight: 600; color: #2D4F78">{{r.shareLabel}}</span>
+                  </div>
+                </div>
+              </sc-for>
+            </article>
+          </sc-for>
+        </div>
+      </section>
+    </sc-if>
+
+    <footer style="display: flex; flex-direction: column; align-items: center; gap: 18px; text-align: center; padding-top: 8px">
+      <p style="margin: 0; font-size: 18px; font-weight: 700; color: #ffffff">Diviértete junto a nosotros con nuestra campaña</p>
+      <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap; justify-content: center; background: #ffffff; border-radius: 999px; padding: 10px 26px">
+        <span style="font-weight: 700; font-size: 16px; color: #0B5AA6">[@usuario de Humana]</span>
+        <span aria-hidden="true" style="width: 1.5px; height: 28px; background: #8DB6DE"></span>
+        <img src="img/logo-humana.png" alt="humana" style="height: 40px; width: auto">
+      </div>
+      <p style="margin: 0; font-size: 14px; font-weight: 600; color: #CFE3FA">Votación abierta hasta el miércoles 11 de noviembre a las 5:00 p. m. · [Enlace a bases y condiciones]</p>
+    </footer>
+  </div>
+</div>
+</template>
+<script>
+// Los votos se guardan en la base de datos de Cloudflare (functions/api/votos.js)
+var URL_VOTOS = '/api/votos';
+/* Mini motor de plantillas: {{valores}}, <sc-for>, <sc-if> y eventos onClick */
+class DCLogic {
+  constructor(props) { this.props = props || {}; this.state = {}; }
+  setState(p) { Object.assign(this.state, typeof p === 'function' ? p(this.state) : p); this.__render && this.__render(); }
+  forceUpdate() { this.__render && this.__render(); }
+}
+function __get(scope, path) {
+  path = path.trim();
+  if (path === 'true') return true; if (path === 'false') return false;
+  if (/^-?\d+(\.\d+)?$/.test(path)) return Number(path);
+  return path.split('.').reduce(function (o, k) { return o == null ? undefined : o[k]; }, scope);
+}
+var __HOLE = /^\s*\{\{\s*([^}]+?)\s*\}\}\s*$/;
+function __interp(str, scope) {
+  return str.replace(/\{\{\s*([^}]+?)\s*\}\}/g, function (_, p) { var v = __get(scope, p); return v == null ? '' : String(v); });
+}
+function __renderKids(node, scope, out) {
+  for (var c = node.firstChild; c; c = c.nextSibling) __renderNode(c, scope, out);
+  return out;
+}
+function __renderNode(n, scope, out) {
+  if (n.nodeType === 3) { out.push(document.createTextNode(__interp(n.data, scope))); return; }
+  if (n.nodeType !== 1) return;
+  var tag = n.localName;
+  if (tag === 'sc-for') {
+    var m = (n.getAttribute('list') || '').match(__HOLE), list = m ? __get(scope, m[1]) : [], as = n.getAttribute('as') || 'item';
+    (list || []).forEach(function (item, i) { var s = Object.create(scope); s[as] = item; s.$index = i; __renderKids(n, s, out); });
+    return;
+  }
+  if (tag === 'sc-if') {
+    var mv = (n.getAttribute('value') || '').match(__HOLE);
+    if (mv && __get(scope, mv[1])) __renderKids(n, scope, out);
+    return;
+  }
+  var el = n.namespaceURI && n.namespaceURI !== 'http://www.w3.org/1999/xhtml' ? document.createElementNS(n.namespaceURI, n.localName) : document.createElement(tag);
+  for (var i = 0; i < n.attributes.length; i++) {
+    var a = n.attributes[i], name = a.name, val = a.value, h = val.match(__HOLE);
+    if (name.indexOf('hint-') === 0) continue;
+    if (/^on[a-z]+$/.test(name)) { if (h) el['__' + name.slice(2)] = __get(scope, h[1]); continue; }
+    if (h) {
+      var v = __get(scope, h[1]);
+      if (name === 'disabled' || name === 'checked' || name === 'hidden') { if (v) el.setAttribute(name, ''); continue; }
+      if (v == null) continue;
+      el.setAttribute(name, String(v));
+    } else el.setAttribute(name, __interp(val, scope));
+  }
+  __renderKids(n.content || n, scope, []).forEach(function (k) { el.appendChild(k); });
+  out.push(el);
+}
+function __bind(el) {
+  if (el.__bound) return; el.__bound = true;
+  el.addEventListener('click', function (e) { if (el.__click && !el.hasAttribute('disabled')) el.__click(e); });
+}
+function __morph(parent, kids) {
+  for (var i = 0; i < kids.length; i++) {
+    var o = parent.childNodes[i], n = kids[i];
+    if (!o) { parent.appendChild(n); __bindTree(n); continue; }
+    if (o.nodeType !== n.nodeType || o.nodeName !== n.nodeName) { parent.replaceChild(n, o); __bindTree(n); continue; }
+    if (o.nodeType === 3) { if (o.data !== n.data) o.data = n.data; continue; }
+    for (var j = o.attributes.length - 1; j >= 0; j--) { var an = o.attributes[j].name; if (!n.hasAttribute(an)) o.removeAttribute(an); }
+    for (var k = 0; k < n.attributes.length; k++) { var at = n.attributes[k]; if (o.getAttribute(at.name) !== at.value) o.setAttribute(at.name, at.value); }
+    o.__click = n.__click; if (o.__click) __bind(o);
+    __morph(o, Array.prototype.slice.call(n.childNodes));
+  }
+  while (parent.childNodes.length > kids.length) parent.removeChild(parent.lastChild);
+}
+function __bindTree(el) {
+  if (el.nodeType !== 1) return;
+  if (el.__click) __bind(el);
+  for (var c = el.firstChild; c; c = c.nextSibling) __bindTree(c);
+}
+function montar(Comp) {
+  var app = document.getElementById('app'), tpl = document.getElementById('plantilla').content;
+  var c = new Comp({}), pend = false;
+  function render() { __morph(app, __renderKids(tpl, c.renderVals(), [])); }
+  c.__render = function () { if (pend) return; pend = true; requestAnimationFrame(function () { pend = false; render(); }); };
+  render();
+  if (c.componentDidMount) c.componentDidMount();
+}
+
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { city: 'quito', votes: { quito: null, guayaquil: null, cuenca: null }, lastPick: null, submitted: false, now: Date.now(), counts: { quito: {}, guayaquil: {}, cuenca: {} } };
+  }
+  componentDidMount() {
+    var self = this;
+    this.conectar();
+    this.timer = setInterval(function () { self.setState({ now: Date.now() }); }, 1000);
+  }
+  idVotante() {
+    var k = 'humana-votante';
+    try {
+      var id = localStorage.getItem(k);
+      if (!id) { id = 'v-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10); localStorage.setItem(k, id); }
+      return id;
+    } catch (e) { return this._idTmp || (this._idTmp = 'v-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10)); }
+  }
+  conectar() {
+    var self = this;
+    // Si esta persona ya votó en este navegador, se muestra su voto
+    try {
+      var g = JSON.parse(localStorage.getItem('humana-mi-voto') || 'null');
+      if (g && g.quito && g.guayaquil && g.cuenca) this.setState({ votes: g, submitted: true });
+    } catch (e) {}
+    if (!URL_VOTOS) return;
+    var cargar = function () {
+      fetch(URL_VOTOS + '?accion=conteo&t=' + Date.now())
+        .then(function (r) { return r.json(); })
+        .then(function (d) { if (d && d.counts) self.setState({ counts: d.counts }); })
+        .catch(function () {});
+    };
+    cargar();
+    this._conteo = setInterval(cargar, 15000);
+  }
+  enviarVoto(votes) {
+    var self = this;
+    if (!URL_VOTOS || this.state.enviando) return;
+    this.setState({ enviando: true, aviso: null });
+    var datos = { votante: this.idVotante(), quito: votes.quito, guayaquil: votes.guayaquil, cuenca: votes.cuenca };
+    fetch(URL_VOTOS, { method: 'POST', body: JSON.stringify(datos) })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d && (d.ok || d.motivo === 'ya_voto')) {
+          try { localStorage.setItem('humana-mi-voto', JSON.stringify({ quito: votes.quito, guayaquil: votes.guayaquil, cuenca: votes.cuenca })); } catch (e) {}
+          var upd = { submitted: true, enviando: false, lastPick: null };
+          if (d.motivo === 'ya_voto') upd.aviso = 'Ya habías votado desde este dispositivo. ¡Gracias!';
+          if (d.counts) upd.counts = d.counts;
+          self.setState(upd);
+        } else if (d && d.motivo === 'cerrada') {
+          self.setState({ enviando: false, aviso: 'La votación ya cerró.' });
+        } else {
+          self.setState({ enviando: false, aviso: 'No se pudo guardar tu voto. Inténtalo de nuevo.' });
+        }
+      })
+      .catch(function () { self.setState({ enviando: false, aviso: 'No hay conexión. Revisa tu internet e inténtalo de nuevo.' }); });
+  }
+  componentWillUnmount() {
+    clearInterval(this.timer);
+  }
+  renderVals() {
+    var self = this;
+    // Cierre: miércoles 11 nov 2026, 5:00 p. m. hora de Ecuador (UTC-5)
+    var closeAt = Date.parse('2026-11-11T17:00:00-05:00');
+    var left = Math.max(0, closeAt - this.state.now);
+    var open = left > 0;
+    var s = Math.floor(left / 1000);
+    var pad = function (x) { return (x < 10 ? '0' : '') + x; };
+    var countdown = [
+      { value: pad(Math.floor(s / 86400)), label: 'Días' },
+      { value: pad(Math.floor((s % 86400) / 3600)), label: 'Horas' },
+      { value: pad(Math.floor((s % 3600) / 60)), label: 'Min' },
+      { value: pad(s % 60), label: 'Seg' }
+    ];
+    var n = this.props.fotosPorCiudad ?? 6;
+    var cities = [
+      { id: 'quito', label: 'Quito' },
+      { id: 'guayaquil', label: 'Guayaquil' },
+      { id: 'cuenca', label: 'Cuenca' }
+    ];
+    var city = this.state.city;
+    var votes = this.state.votes;
+    var submitted = this.state.submitted;
+    var myVote = votes[city];
+    var labelOf = function (cid) { return cities.filter(function (c) { return c.id === cid; })[0].label; };
+    var cityLabel = labelOf(city);
+    var tituloFoto = function (pid) { var k = parseInt(pid.split('-')[1], 10) + 1; return 'Foto ' + (k < 10 ? '0' : '') + k; };
+    var missing = cities.filter(function (c) { return !votes[c.id]; });
+    var tabs = cities.map(function (c) {
+      var active = c.id === city;
+      var voted = !!votes[c.id];
+      return {
+        id: c.id, label: c.label, active: active, voted: voted,
+        pick: function () { self.setState({ city: c.id, lastPick: null }); },
+        tabStyle: 'display:inline-flex;align-items:center;gap:8px;min-height:48px;padding:0 26px;border-radius:999px;font-weight:700;font-size:17px;cursor:pointer;border:2px solid #0B5AA6;' + (active ? 'background:#0B5AA6;color:#ffffff;box-shadow:0 8px 18px rgba(11,90,166,.35);' : 'background:#ffffff;color:#0B5AA6;'),
+        dotStyle: 'display:block;width:14px;height:14px;border-radius:50%;border:2px solid #0B5AA6;' + (voted ? 'background:#0B5AA6;' : 'background:#ffffff;')
+      };
+    });
+    // Fotos cargadas por ciudad (las ciudades sin fotos muestran espacios de muestra)
+    var fotos = {
+      quito: [
+        'img/quito-01.jpg', 'img/quito-02.jpg',
+        'img/quito-03.jpg', 'img/quito-04.jpg',
+        'img/quito-05.jpg', 'img/quito-06.jpg',
+        'img/quito-07.jpg', 'img/quito-08.jpg',
+        'img/quito-09.jpg', 'img/quito-10.jpg',
+        'img/quito-11.jpg', 'img/quito-12.jpg',
+        'img/quito-13.jpg', 'img/quito-14.jpg',
+        'img/quito-15.jpg', 'img/quito-16.jpg',
+        'img/quito-17.jpg', 'img/quito-18.jpg',
+        'img/quito-19.jpg', 'img/quito-20.jpg',
+        'img/quito-21.jpg', 'img/quito-22.jpg',
+        'img/quito-23.jpg', 'img/quito-24.jpg'
+      ].map(function (s) { return { src: s, pos: 'center', ar: '3 / 2' }; }),
+      guayaquil: [
+        { src: 'img/guayaquil-01.jpg', pos: '50% 0%' },
+        { src: 'img/guayaquil-02.jpg', pos: '50% 0%' },
+        { src: 'img/guayaquil-03.jpg', pos: '50% 0%' },
+        { src: 'img/guayaquil-04.jpg', pos: '52% 50%' },
+        { src: 'img/guayaquil-05.jpg', pos: '50% 0%' },
+        { src: 'img/guayaquil-06.jpg', pos: '50% 0%' },
+        { src: 'img/guayaquil-07.jpg', pos: '50% 0%' },
+        { src: 'img/guayaquil-08.jpg', pos: '55% 50%' },
+        { src: 'img/guayaquil-09.jpg', pos: '50% 0%' },
+        { src: 'img/guayaquil-10.jpg', pos: '50% 0%' },
+        { src: 'img/guayaquil-11.jpg', pos: '45% 50%' },
+        { src: 'img/guayaquil-12.jpg', pos: '20% 50%' },
+        { src: 'img/guayaquil-13.jpg', pos: '50% 0%' },
+        { src: 'img/guayaquil-14.jpg', pos: '45% 50%' },
+        { src: 'img/guayaquil-15.jpg', pos: '63% 50%' },
+        { src: 'img/guayaquil-16.jpg', pos: '50% 0%' },
+        { src: 'img/guayaquil-17.jpg', pos: '38% 50%' },
+        { src: 'img/guayaquil-18.jpg', pos: '42% 50%' },
+        { src: 'img/guayaquil-19.jpg', pos: '63% 50%' },
+        { src: 'img/guayaquil-20.jpg', pos: '38% 50%' },
+        { src: 'img/guayaquil-21.jpg', pos: '50% 20%' },
+        { src: 'img/guayaquil-22.jpg', pos: '50% 25%' },
+        { src: 'img/guayaquil-23.jpg', pos: '35% 50%' }
+      ],
+      cuenca: [
+        { src: 'img/cuenca-01.jpg', pos: 'center 28%' },
+        { src: 'img/cuenca-02.jpg', pos: 'center 40%' },
+        { src: 'img/cuenca-03.jpg', pos: '42% center' },
+        { src: 'img/cuenca-04.jpg', pos: 'center 32%' }
+      ]
+    };
+    var cityFotos = fotos[city] || [];
+    if (cityFotos.length) n = cityFotos.length;
+    var cc0 = (this.state.counts && this.state.counts[city]) || {};
+    var totalCiudad = Object.keys(cc0).reduce(function (a, k) { return a + cc0[k]; }, 0);
+    var lider = Object.keys(cc0).reduce(function (m, k) { return cc0[k] > m ? cc0[k] : m; }, 0);
+    var cards = [];
+    for (var i = 0; i < n; i++) {
+      (function (idx) {
+        var id = city + '-' + idx;
+        var foto = cityFotos[idx];
+        var selected = myVote === id;
+        var locked = (submitted && !selected) || (!open && !selected);
+        cards.push({
+          title: 'Foto ' + (idx + 1 < 10 ? '0' : '') + (idx + 1),
+          hasPhoto: !!foto,
+          noPhoto: !foto,
+          src: foto ? foto.src : '',
+          alt: 'Foto ' + (idx + 1) + ' de ' + cityLabel,
+          imgStyle: 'display:block;width:100%;aspect-ratio:' + ((foto && foto.ar) || '4 / 5') + ';object-fit:cover;object-position:' + (foto ? foto.pos : 'center') + ';',
+          selected: selected,
+          disabled: submitted || !open || selected,
+          btnLabel: submitted ? (selected ? '✓ Tu voto' : 'Voto enviado') : (!open ? 'Votación cerrada' : (selected ? '✓ Elegida' : (myVote ? 'Cambiar a esta foto' : 'Elegir esta foto'))),
+          vote: function () {
+            if (self.state.submitted || Date.now() >= closeAt) return;
+            var v = Object.assign({}, self.state.votes);
+            v[city] = id;
+            self.setState({ votes: v, lastPick: id });
+          },
+          pctLabel: (totalCiudad ? Math.round((cc0[id] || 0) / totalCiudad * 100) : 0) + '%',
+          votosLabel: (cc0[id] || 0) + ((cc0[id] || 0) === 1 ? ' voto' : ' votos'),
+          barStyle: 'height:100%;border-radius:999px;width:' + (totalCiudad ? Math.round((cc0[id] || 0) / totalCiudad * 100) : 0) + '%;background:' + (lider > 0 && (cc0[id] || 0) === lider ? '#F5B82E' : '#0B5AA6') + ';transition:width .6s;',
+          cardStyle: 'background:#ffffff;border-radius:24px;overflow:hidden;display:flex;flex-direction:column;transition:transform .2s, box-shadow .2s;' + (selected ? 'box-shadow:0 0 0 4px #0B5AA6, 0 20px 40px rgba(11,90,166,.3);transform:translateY(-4px);' : 'box-shadow:0 10px 28px rgba(6,47,99,.12);') + (locked ? 'opacity:.6;' : ''),
+          btnStyle: 'min-height:48px;border-radius:999px;font-weight:700;font-size:16px;border:2px solid #0B5AA6;' + (selected ? 'background:#0B5AA6;color:#ffffff;cursor:default;' : (locked ? 'background:#F1F5F9;color:#475569;border-color:#CBD5E1;cursor:not-allowed;' : 'background:#ffffff;color:#0B5AA6;cursor:pointer;'))
+        });
+      })(i);
+    }
+    var votedCount = 3 - missing.length;
+    // Top 3 por ciudad
+    var counts = this.state.counts;
+    var medallas = [
+      { bg: '#F5C542', fg: '#5A3E00' },
+      { bg: '#D5DEE9', fg: '#2B3A4F' },
+      { bg: '#E7A36B', fg: '#4A2508' }
+    ];
+    var top = cities.map(function (c) {
+      var cc = counts[c.id] || {};
+      var total = Object.keys(cc).reduce(function (s, k) { return s + cc[k]; }, 0);
+      var orden = Object.keys(cc).filter(function (k) { return cc[k] > 0; })
+        .sort(function (a, b) { return cc[b] - cc[a] || parseInt(a.split('-')[1], 10) - parseInt(b.split('-')[1], 10); })
+        .slice(0, 1);
+      return {
+        label: c.label,
+        totalLabel: total + (total === 1 ? ' voto' : ' votos'),
+        empty: orden.length === 0,
+        rows: orden.map(function (pid, r) {
+          var f = (fotos[c.id] || [])[parseInt(pid.split('-')[1], 10)];
+          var v = cc[pid];
+          return {
+            rank: r + 1,
+            title: tituloFoto(pid),
+            hasPhoto: !!f, noPhoto: !f, src: f ? f.src : '',
+            imgStyle: 'display:block;width:100%;aspect-ratio:4 / 3;object-fit:cover;object-position:' + (f ? f.pos : 'center') + ';',
+            votesLabel: v + (v === 1 ? ' voto' : ' votos'),
+            shareLabel: Math.round(v / total * 100) + '% de los votos de ' + c.label,
+            barStyle: 'height:100%;border-radius:999px;background:#0B5AA6;width:' + Math.round(v / total * 100) + '%;'
+          };
+        })
+      };
+    });
+    // Mensaje tras elegir y paso siguiente
+    var lastPick = this.state.lastPick;
+    var next = missing.filter(function (c) { return c.id !== city; })[0] || null;
+    var pickMsg = '';
+    if (lastPick) {
+      pickMsg = 'Elegiste la ' + tituloFoto(lastPick) + ' en ' + labelOf(lastPick.split('-')[0]) + '. ' +
+        (missing.length ? 'Te falta elegir en ' + missing.map(function (c) { return c.label; }).join(' y ') + '.' : '¡Ya elegiste en las 3 ciudades! Ahora envía tu voto.');
+    }
+    // Resumen y envío
+    var resumen = cities.map(function (c) {
+      var pid = votes[c.id];
+      return {
+        label: c.label,
+        value: pid ? tituloFoto(pid) : 'Pendiente',
+        style: 'display:flex;flex-direction:column;gap:2px;min-width:110px;padding:8px 14px;border-radius:14px;' + (pid ? 'background:#1E6FD0;' : 'background:transparent;border:1.5px dashed #6F95D6;')
+      };
+    });
+    var canSend = !submitted && open && missing.length === 0 && !this.state.enviando && !!URL_VOTOS;
+    var sendHint = this.state.aviso ? this.state.aviso : !URL_VOTOS ? 'Falta conectar la hoja de votos.' : this.state.enviando ? 'Enviando tu voto…' : submitted ? 'Tu voto ya fue enviado.' : (!open ? 'La votación está cerrada.' : (missing.length ? 'Elige una foto en ' + missing.map(function (c) { return c.label; }).join(', ') + ' para poder enviar.' : 'Revisa tus elecciones y envía.'));
+    // Cielo nocturno: estrellas con posiciones fijas (pseudoaleatorias)
+    if (!this._cielo) {
+      var seed = 7;
+      var rnd = function () { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+      var estrellas = [];
+      for (var k = 0; k < 160; k++) {
+        var size = rnd() < 0.85 ? 1 + Math.round(rnd() * 2) : 3 + Math.round(rnd() * 2);
+        estrellas.push({ style: 'position:absolute;left:' + (rnd() * 100).toFixed(2) + '%;top:' + (rnd() * 100).toFixed(2) + '%;width:' + size + 'px;height:' + size + 'px;border-radius:50%;background:#ffffff;box-shadow:0 0 ' + (size * 2) + 'px #ffffff, 0 0 ' + (size * 6) + 'px rgba(150,205,255,.95);animation:titilar ' + (1.8 + rnd() * 2.5).toFixed(1) + 's ease-in-out ' + (rnd() * 4).toFixed(1) + 's infinite;' });
+      }
+      // Destellos de 4 puntas: más grandes y concentrados en el encabezado
+      var destellos = [
+        ['22%', 150, 34], ['78%', 300, 30], ['70%', 60, 18], ['30%', 420, 20], ['85%', 560, 24], ['15%', 640, 16],
+        ['92%', 200, 14], ['5%', 120, 20], ['60%', 700, 14], ['48%', 30, 12], ['36%', 760, 22], ['66%', 470, 16],
+        ['8%', 1300, 22], ['94%', 1700, 26], ['4%', 2300, 18], ['96%', 2900, 22], ['6%', 3500, 20], ['95%', 4100, 18]
+      ].map(function (p, j) {
+        var d = (2.2 + (j % 4) * 0.7).toFixed(1) + 's ease-in-out ' + (j * 0.45).toFixed(2) + 's infinite;';
+        return {
+          wrap: 'position:absolute;left:' + p[0] + ';top:' + p[1] + 'px;width:' + p[2] + 'px;height:' + p[2] + 'px;',
+          halo: 'position:absolute;left:50%;top:50%;width:' + (p[2] * 2.6) + 'px;height:' + (p[2] * 2.6) + 'px;margin:-' + (p[2] * 1.3) + 'px 0 0 -' + (p[2] * 1.3) + 'px;border-radius:50%;background:radial-gradient(circle, rgba(170,215,255,.55) 0%, rgba(120,180,255,.18) 40%, rgba(120,180,255,0) 70%);animation:halo ' + d,
+          style: 'position:relative;display:block;width:100%;height:100%;filter:drop-shadow(0 0 4px #ffffff) drop-shadow(0 0 12px rgba(150,210,255,1));animation:destello ' + d
+        };
+      });
+      // Letras tipo globo inspiradas en el arte de la campaña
+      var tonos = {
+        oscuro: { a: '#9FD0FF', b: '#3C8DFF', c: '#1F62EC', d: '#0C3BB0', glow: 'rgba(70,150,255,.65)' },
+        claro: { a: '#E6FAFF', b: '#7FDBFF', c: '#2CB4F5', d: '#0C79C9', glow: 'rgba(90,210,255,.6)' },
+        cian: { a: '#F2FCFF', b: '#8FE3FF', c: '#36BDF7', d: '#0D7FCC', glow: 'rgba(110,220,255,.65)' }
+      };
+      var rot = [-3, 2, -1, 3, -2, 1, -3, 2];
+      var dy = [0, -4, 2, -2, 3, -1, 2, -3];
+      var fila = function (texto, tono, size) {
+        var t = tonos[tono];
+        return { letras: texto.split('').map(function (ch, m) {
+          var fs = 'min(' + size + 'px, ' + (size / 8).toFixed(1) + 'vw)';
+          if (ch === ' ') return { ch: ' ', style: 'display:inline-block;font-size:' + fs + ';width:0.28em;' };
+          return { ch: ch, style: 'display:inline-block;font-size:' + fs + ';margin:0 -2px;transform:rotate(' + rot[m % rot.length] + 'deg) translateY(' + dy[m % dy.length] + 'px);background:radial-gradient(ellipse 30% 16% at 32% 22%, rgba(255,255,255,.95) 0%, rgba(255,255,255,.6) 45%, rgba(255,255,255,0) 100%), linear-gradient(180deg, ' + t.a + ' 0%, ' + t.b + ' 32%, ' + t.c + ' 68%, ' + t.d + ' 100%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 6px 0 ' + t.d + ') drop-shadow(0 0 1.5px rgba(220,240,255,.9)) drop-shadow(0 0 26px ' + t.glow + ') drop-shadow(0 18px 20px rgba(0,0,0,.5));' };
+        }) };
+      };
+      this._cielo = {
+        estrellas: estrellas,
+        destellos: destellos,
+        titulo: [fila('HUMANA', 'oscuro', 120), fila('PARA', 'claro', 104), fila('HUMANOS', 'oscuro', 116), fila('COMO TÚ', 'cian', 108)],
+        // Nubes nocturnas en las esquinas inferiores del encabezado
+        nubes: (function () {
+          var out = [];
+          var grupo = function (lado, baseX) {
+            // base ancha + bultos redondos encima, con bordes suaves
+            var piezas = [[0, 0, 640, 170], [40, 70, 210], [190, 95, 260], [380, 80, 220], [520, 50, 170], [110, 150, 150], [300, 175, 170], [470, 130, 120]];
+            piezas.forEach(function (q) {
+              var w = q[2], h = q[3] || q[2];
+              out.push({ style: 'position:absolute;' + lado + ':' + (baseX + q[0]) + 'px;bottom:' + q[1] + 'px;width:' + w + 'px;height:' + h + 'px;border-radius:' + (q[3] ? '50% / 60%' : '50%') + ';background:radial-gradient(ellipse at 50% 22%, #7FA6EC 0%, #4A73C6 28%, #24489A 60%, #102C6A 100%);box-shadow:inset 0 18px 30px rgba(200,222,255,.28), inset 0 -20px 40px rgba(5,15,50,.45);filter:blur(1.5px);opacity:.95;' });
+            });
+          };
+          grupo('left', 0); grupo('right', 0);
+          return out;
+        })()
+      };
+    }
+    return { estrellas: this._cielo.estrellas, destellos: this._cielo.destellos, titulo: this._cielo.titulo, nubes: this._cielo.nubes, open: open, closed: !open, countdown: countdown, tabs: tabs, cards: cards, cityLabel: cityLabel, votedCount: votedCount,
+      showPickMsg: !!lastPick && !submitted, pickMsg: pickMsg,
+      hasNext: !!lastPick && !submitted && !!next, nextLabel: next ? next.label : '',
+      goNext: function () { if (next) self.setState({ city: next.id, lastPick: null }); },
+      showTop: this.props.mostrarTop3 ?? true, top: top,
+      gridStyle: 'display:grid;gap:24px;grid-template-columns:repeat(auto-fill, minmax(min(100%, ' + (city === 'quito' ? 340 : 250) + 'px), 1fr));',
+      submitted: submitted, resumen: resumen, cantSend: !canSend,
+      sendLabel: submitted ? '✓ Voto enviado' : 'Enviar mi voto',
+      sendHint: sendHint,
+      sendStyle: 'min-height:52px;padding:0 32px;border-radius:999px;border:0;font-weight:700;font-size:18px;' + (canSend ? 'background:#ffffff;color:#0A2463;cursor:pointer;box-shadow:0 0 0 4px rgba(120,190,255,.35);' : (submitted ? 'background:#1E6FD0;color:#ffffff;cursor:default;' : 'background:#3A5488;color:#B9C8E4;cursor:not-allowed;')),
+      send: function () {
+        if (!canSend || Date.now() >= closeAt) return;
+        self.enviarVoto(votes);
+      }
+    };
+  }
+}
+
+montar(Component);
+</script>
+</body>
+</html>
