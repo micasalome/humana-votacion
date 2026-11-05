@@ -82,6 +82,14 @@ export default {
         return json({ ok: false, motivo: 'servidor' }, 500);
       }
     }
-    return env.ASSETS.fetch(request);
+    // La página siempre se pide fresca para que los cambios se vean al instante
+    const res = await env.ASSETS.fetch(request);
+    const tipo = res.headers.get('Content-Type') || '';
+    if (tipo.includes('text/html')) {
+      const r = new Response(res.body, res);
+      r.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      return r;
+    }
+    return res;
   }
 };
