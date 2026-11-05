@@ -180,9 +180,6 @@ button{font-family:inherit}
             </sc-if>
             <div class="card-cuerpo" style="padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 12px; flex: 1">
               <div style="display: flex; flex-direction: column; gap: 2px">
-                <sc-if value="{{card.tieneNombre}}" hint-placeholder-val="{{ false }}">
-                  <span style="font-size: 12px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: #5A7CA6">{{card.numero}}</span>
-                </sc-if>
                 <span class="card-titulo" style="font-family: 'Fredoka', 'Baloo 2', sans-serif; font-weight: 700; font-size: 21px; line-height: 1.2; color: #0A3566">{{card.title}}</span>
               </div>
               <div style="display: flex; flex-direction: column; gap: 6px; margin-top: auto">
@@ -519,28 +516,28 @@ class Component extends DCLogic {
       ].map(function (s) { return { src: s, pos: 'center', ar: '3 / 2' }; }),
       guayaquil: [
         { src: 'img/guayaquil-01.jpg', pos: '50% 0%', nombre: 'Josias Rojas' },
-        { src: 'img/guayaquil-02.jpg', pos: '50% 0%' },
-        { src: 'img/guayaquil-03.jpg', pos: '50% 0%' },
-        { src: 'img/guayaquil-04.jpg', pos: '52% 50%' },
-        { src: 'img/guayaquil-05.jpg', pos: '50% 0%' },
-        { src: 'img/guayaquil-06.jpg', pos: '50% 0%' },
-        { src: 'img/guayaquil-07.jpg', pos: '50% 0%' },
-        { src: 'img/guayaquil-08.jpg', pos: '55% 50%' },
-        { src: 'img/guayaquil-09.jpg', pos: '50% 0%' },
-        { src: 'img/guayaquil-10.jpg', pos: '50% 0%' },
-        { src: 'img/guayaquil-11.jpg', pos: '45% 50%' },
-        { src: 'img/guayaquil-12.jpg', pos: '20% 50%' },
-        { src: 'img/guayaquil-13.jpg', pos: '50% 0%' },
-        { src: 'img/guayaquil-14.jpg', pos: '45% 50%' },
-        { src: 'img/guayaquil-15.jpg', pos: '63% 50%' },
-        { src: 'img/guayaquil-16.jpg', pos: '50% 0%' },
-        { src: 'img/guayaquil-17.jpg', pos: '38% 50%' },
-        { src: 'img/guayaquil-18.jpg', pos: '42% 50%' },
-        { src: 'img/guayaquil-19.jpg', pos: '63% 50%' },
-        { src: 'img/guayaquil-20.jpg', pos: '38% 50%' },
-        { src: 'img/guayaquil-21.jpg', pos: '50% 20%' },
-        { src: 'img/guayaquil-22.jpg', pos: '50% 25%' },
-        { src: 'img/guayaquil-23.jpg', pos: '35% 50%' }
+        { src: 'img/guayaquil-02.jpg', pos: '50% 0%', nombre: 'Gustavo Rojas' },
+        { src: 'img/guayaquil-03.jpg', pos: '50% 0%', nombre: 'Gabriela Romero' },
+        { src: 'img/guayaquil-04.jpg', pos: '52% 50%', nombre: 'Francis Aguirre' },
+        { src: 'img/guayaquil-05.jpg', pos: '50% 0%', nombre: 'Freddy Peñafiel' },
+        { src: 'img/guayaquil-06.jpg', pos: '50% 0%', nombre: 'Fadua Salinas' },
+        { src: 'img/guayaquil-07.jpg', pos: '50% 0%', nombre: 'Evelyn Espinoza' },
+        { src: 'img/guayaquil-08.jpg', pos: '55% 50%', nombre: 'Diego Rodriguez' },
+        { src: 'img/guayaquil-09.jpg', pos: '50% 0%', nombre: 'Daniela Zambrano' },
+        { src: 'img/guayaquil-10.jpg', pos: '50% 0%', nombre: 'Christian Gracia' },
+        { src: 'img/guayaquil-11.jpg', pos: '45% 50%', nombre: 'Carolina Naula' },
+        { src: 'img/guayaquil-12.jpg', pos: '20% 50%', nombre: 'Claudia Herrera' },
+        { src: 'img/guayaquil-13.jpg', pos: '50% 0%', nombre: 'Carol Gavilanez' },
+        { src: 'img/guayaquil-14.jpg', pos: '45% 50%', nombre: 'Yahimara Narvaez' },
+        { src: 'img/guayaquil-15.jpg', pos: '63% 50%', nombre: 'Mayra Ruiz' },
+        { src: 'img/guayaquil-16.jpg', pos: '50% 0%', nombre: 'Veronica Paredes' },
+        { src: 'img/guayaquil-17.jpg', pos: '38% 50%', nombre: 'Paulette Freire' },
+        { src: 'img/guayaquil-18.jpg', pos: '42% 50%', nombre: 'Mayra Mera' },
+        { src: 'img/guayaquil-19.jpg', pos: '63% 50%', nombre: 'Max Wirz' },
+        { src: 'img/guayaquil-20.jpg', pos: '38% 50%', nombre: 'Marlon Garcia' },
+        { src: 'img/guayaquil-21.jpg', pos: '50% 20%', nombre: 'Maria Jose Cabrera' },
+        { src: 'img/guayaquil-22.jpg', pos: '50% 25%', nombre: 'Maria Fernanda Pijal' },
+        { src: 'img/guayaquil-23.jpg', pos: '35% 50%', nombre: 'Maria Luisa Cherrez' }
       ],
       cuenca: [
         { src: 'img/cuenca-01.jpg', pos: 'center 28%' },
@@ -625,7 +622,7 @@ class Component extends DCLogic {
     var next = missing.filter(function (c) { return c.id !== city; })[0] || null;
     var pickMsg = '';
     if (lastPick) {
-      pickMsg = 'Eligieron: ' + tituloFoto(lastPick) + ' (' + numFoto(lastPick) + ') en ' + labelOf(lastPick.split('-')[0]) + '. ' +
+      pickMsg = 'Eligieron: ' + tituloFoto(lastPick) + ' en ' + labelOf(lastPick.split('-')[0]) + '. ' +
         (missing.length ? 'Les falta elegir en ' + missing.map(function (c) { return c.label; }).join(' y ') + '.' : '¡Ya eligieron en las 3 ciudades! Ahora envíen su voto.');
     }
     // Resumen y envío

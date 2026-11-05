@@ -40,7 +40,16 @@ async function votar(request, db) {
   return json({ ok: true, counts: await conteo(db) });
 }
 
-const foto = (id) => { const n = parseInt(String(id).split('-')[1], 10) + 1; return 'Foto ' + (n < 10 ? '0' : '') + n; };
+// Nombres de los participantes (deben coincidir con public/index.html)
+const NOMBRES = {
+  guayaquil: ['Josias Rojas', 'Gustavo Rojas', 'Gabriela Romero', 'Francis Aguirre', 'Freddy Peñafiel', 'Fadua Salinas', 'Evelyn Espinoza', 'Diego Rodriguez', 'Daniela Zambrano', 'Christian Gracia', 'Carolina Naula', 'Claudia Herrera', 'Carol Gavilanez', 'Yahimara Narvaez', 'Mayra Ruiz', 'Veronica Paredes', 'Paulette Freire', 'Mayra Mera', 'Max Wirz', 'Marlon Garcia', 'Maria Jose Cabrera', 'Maria Fernanda Pijal', 'Maria Luisa Cherrez']
+};
+const foto = (id) => {
+  const [ciudad, i] = String(id).split('-'); const n = parseInt(i, 10) + 1;
+  const num = 'Foto ' + (n < 10 ? '0' : '') + n;
+  const nombre = (NOMBRES[ciudad] || [])[n - 1];
+  return nombre ? nombre + ' (' + num + ')' : num;
+};
 const celda = (v) => '"' + String(v).replace(/"/g, '""') + '"';
 
 async function exportar(url, env) {
