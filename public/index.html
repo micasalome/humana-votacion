@@ -31,6 +31,7 @@ button{font-family:inherit}
 </head>
 <body>
 <div id="app"></div>
+<div id="anti-robot" style="position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:9999"></div>
 <template id="plantilla">
 <div style="position: relative; overflow: hidden; overflow: clip; min-height: 2050px; font-family: 'Quicksand', system-ui, sans-serif; color: #0A3566; background: radial-gradient(ellipse 80% 50% at 70% 8%, rgba(70, 140, 255, 0.35) 0%, rgba(70, 140, 255, 0) 70%), linear-gradient(180deg, #040C26 0%, #081B4E 28%, #0B2C72 58%, #12469E 100%)">
 
@@ -322,6 +323,44 @@ button{font-family:inherit}
 <script>
 // Los votos se guardan en la base de datos de Cloudflare (functions/api/votos.js)
 var URL_VOTOS = '/api/votos';
+/* Verificación anti-robots (Cloudflare Turnstile). Solo se activa si el servidor tiene las claves. */
+var AntiRobot = {
+  id: null, listo: null,
+  iniciar: function () {
+    var self = this;
+    this.listo = fetch('/api/config?t=' + Date.now()).then(function (r) { return r.json(); }).then(function (c) {
+      if (!c || !c.turnstile) return false;
+      return new Promise(function (ok) {
+        window.__tsListo = function () {
+          self.id = window.turnstile.render('#anti-robot', { sitekey: c.turnstile, execution: 'execute', appearance: 'interaction-only', language: 'es' });
+          ok(true);
+        };
+        var sc = document.createElement('script');
+        sc.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=__tsListo&render=explicit';
+        sc.async = true; sc.onerror = function () { ok(false); };
+        document.head.appendChild(sc);
+      });
+    }).catch(function () { return false; });
+  },
+  token: function () {
+    var self = this;
+    return (this.listo || Promise.resolve(false)).then(function (activo) {
+      if (!activo || self.id == null) return '';
+      return new Promise(function (ok) {
+        var ts = window.turnstile, fin = false;
+        var listo = function (t) { if (!fin) { fin = true; ok(t || ''); } };
+        try { ts.reset(self.id); } catch (e) {}
+        var espera = setInterval(function () {
+          var t = ts.getResponse(self.id);
+          if (t) { clearInterval(espera); listo(t); }
+        }, 250);
+        setTimeout(function () { clearInterval(espera); listo(''); }, 60000);
+        try { ts.execute('#anti-robot'); } catch (e) { clearInterval(espera); listo(''); }
+      });
+    });
+  }
+};
+AntiRobot.iniciar();
 /* Mini motor de plantillas: {{valores}}, <sc-for>, <sc-if> y eventos onClick */
 class DCLogic {
   constructor(props) { this.props = props || {}; this.state = {}; }
@@ -438,7 +477,8 @@ class Component extends DCLogic {
     if (!URL_VOTOS || this.state.enviando) return;
     this.setState({ enviando: true, aviso: null });
     var datos = { votante: this.idVotante(), quito: votes.quito, guayaquil: votes.guayaquil, cuenca: votes.cuenca };
-    fetch(URL_VOTOS, { method: 'POST', body: JSON.stringify(datos) })
+    AntiRobot.token()
+      .then(function (t) { datos.token = t; return fetch(URL_VOTOS, { method: 'POST', body: JSON.stringify(datos) }); })
       .then(function (r) { return r.json(); })
       .then(function (d) {
         if (d && d.ok) {
@@ -447,6 +487,10 @@ class Component extends DCLogic {
           self.setState(upd);
         } else if (d && d.motivo === 'cerrada') {
           self.setState({ enviando: false, aviso: 'La votación ya cerró.' });
+        } else if (d && d.motivo === 'rapido') {
+          self.setState({ enviando: false, aviso: 'Esperen unos segundos antes de volver a votar.' });
+        } else if (d && d.motivo === 'robot') {
+          self.setState({ enviando: false, aviso: 'No pudimos verificar que son una persona. Inténtenlo de nuevo.' });
         } else {
           self.setState({ enviando: false, aviso: 'No se pudo guardar su voto. Inténtenlo de nuevo.' });
         }
