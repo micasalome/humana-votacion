@@ -179,7 +179,12 @@ button{font-family:inherit}
               </div>
             </sc-if>
             <div class="card-cuerpo" style="padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 12px; flex: 1">
-              <span class="card-titulo" style="font-family: 'Fredoka', 'Baloo 2', sans-serif; font-weight: 700; font-size: 21px; color: #0A3566">{{card.title}}</span>
+              <div style="display: flex; flex-direction: column; gap: 2px">
+                <sc-if value="{{card.tieneNombre}}" hint-placeholder-val="{{ false }}">
+                  <span style="font-size: 12px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: #5A7CA6">{{card.numero}}</span>
+                </sc-if>
+                <span class="card-titulo" style="font-family: 'Fredoka', 'Baloo 2', sans-serif; font-weight: 700; font-size: 21px; line-height: 1.2; color: #0A3566">{{card.title}}</span>
+              </div>
               <div style="display: flex; flex-direction: column; gap: 6px; margin-top: auto">
                 <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px">
                   <span class="card-pct" style="font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 22px; color: #0B5AA6">{{card.pctLabel}}</span>
@@ -483,7 +488,8 @@ class Component extends DCLogic {
     var myVote = votes[city];
     var labelOf = function (cid) { return cities.filter(function (c) { return c.id === cid; })[0].label; };
     var cityLabel = labelOf(city);
-    var tituloFoto = function (pid) { var k = parseInt(pid.split('-')[1], 10) + 1; return 'Foto ' + (k < 10 ? '0' : '') + k; };
+    var tituloFoto = function (pid) { var k = parseInt(pid.split('-')[1], 10) + 1; var f = (fotos[pid.split('-')[0]] || [])[k - 1]; return (f && f.nombre) || ('Foto ' + (k < 10 ? '0' : '') + k); };
+    var numFoto = function (pid) { var k = parseInt(pid.split('-')[1], 10) + 1; return 'Foto ' + (k < 10 ? '0' : '') + k; };
     var missing = cities.filter(function (c) { return !votes[c.id]; });
     var tabs = cities.map(function (c) {
       var active = c.id === city;
@@ -512,7 +518,7 @@ class Component extends DCLogic {
         'img/quito-23.jpg', 'img/quito-24.jpg'
       ].map(function (s) { return { src: s, pos: 'center', ar: '3 / 2' }; }),
       guayaquil: [
-        { src: 'img/guayaquil-01.jpg', pos: '50% 0%' },
+        { src: 'img/guayaquil-01.jpg', pos: '50% 0%', nombre: 'Josias Rojas' },
         { src: 'img/guayaquil-02.jpg', pos: '50% 0%' },
         { src: 'img/guayaquil-03.jpg', pos: '50% 0%' },
         { src: 'img/guayaquil-04.jpg', pos: '52% 50%' },
@@ -556,7 +562,9 @@ class Component extends DCLogic {
         var selected = myVote === id;
         var locked = (submitted && !selected) || (!open && !selected);
         cards.push({
-          title: 'Foto ' + (idx + 1 < 10 ? '0' : '') + (idx + 1),
+          title: (foto && foto.nombre) || ('Foto ' + (idx + 1 < 10 ? '0' : '') + (idx + 1)),
+          numero: 'Foto ' + (idx + 1 < 10 ? '0' : '') + (idx + 1),
+          tieneNombre: !!(foto && foto.nombre),
           hasPhoto: !!foto,
           noPhoto: !foto,
           src: foto ? foto.src : '',
@@ -617,7 +625,7 @@ class Component extends DCLogic {
     var next = missing.filter(function (c) { return c.id !== city; })[0] || null;
     var pickMsg = '';
     if (lastPick) {
-      pickMsg = 'Eligieron la ' + tituloFoto(lastPick) + ' en ' + labelOf(lastPick.split('-')[0]) + '. ' +
+      pickMsg = 'Eligieron: ' + tituloFoto(lastPick) + ' (' + numFoto(lastPick) + ') en ' + labelOf(lastPick.split('-')[0]) + '. ' +
         (missing.length ? 'Les falta elegir en ' + missing.map(function (c) { return c.label; }).join(' y ') + '.' : '¡Ya eligieron en las 3 ciudades! Ahora envíen su voto.');
     }
     // Resumen y envío
