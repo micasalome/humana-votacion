@@ -1,6 +1,7 @@
--- Tabla de votos: una fila por persona (votante = código único del dispositivo)
-CREATE TABLE IF NOT EXISTS votos (
-  votante   TEXT PRIMARY KEY,
+-- Referencia: el Worker crea esta tabla solo. Cada voto es una fila (se puede votar varias veces).
+CREATE TABLE IF NOT EXISTS votos_todos (
+  id        INTEGER PRIMARY KEY AUTOINCREMENT,
+  votante   TEXT NOT NULL,
   quito     TEXT NOT NULL,
   guayaquil TEXT NOT NULL,
   cuenca    TEXT NOT NULL,

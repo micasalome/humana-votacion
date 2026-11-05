@@ -173,7 +173,7 @@ button{font-family:inherit}
       <sc-if value="{{submitted}}" hint-placeholder-val="{{ false }}">
         <div role="status" style="display: flex; align-items: center; gap: 14px; background: #0B5AA6; color: #ffffff; border-radius: 20px; padding: 16px 22px; font-weight: 700; font-size: 17px">
           <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M7.5 12.5l3 3 6-6.5"></path></svg>
-          <span>¡Gracias! Tu voto por Quito, Guayaquil y Cuenca fue enviado.</span>
+          <span>¡Gracias! Tu voto por Quito, Guayaquil y Cuenca fue enviado. Puedes volver a votar cuando quieras.</span>
         </div>
       </sc-if>
 
@@ -393,11 +393,6 @@ class Component extends DCLogic {
   }
   conectar() {
     var self = this;
-    // Si esta persona ya votó en este navegador, se muestra su voto
-    try {
-      var g = JSON.parse(localStorage.getItem('humana-mi-voto') || 'null');
-      if (g && g.quito && g.guayaquil && g.cuenca) this.setState({ votes: g, submitted: true });
-    } catch (e) {}
     if (!URL_VOTOS) return;
     var cargar = function () {
       fetch(URL_VOTOS + '?accion=conteo&t=' + Date.now())
@@ -416,10 +411,8 @@ class Component extends DCLogic {
     fetch(URL_VOTOS, { method: 'POST', body: JSON.stringify(datos) })
       .then(function (r) { return r.json(); })
       .then(function (d) {
-        if (d && (d.ok || d.motivo === 'ya_voto')) {
-          try { localStorage.setItem('humana-mi-voto', JSON.stringify({ quito: votes.quito, guayaquil: votes.guayaquil, cuenca: votes.cuenca })); } catch (e) {}
+        if (d && d.ok) {
           var upd = { submitted: true, enviando: false, lastPick: null };
-          if (d.motivo === 'ya_voto') upd.aviso = 'Ya habías votado desde este dispositivo. ¡Gracias!';
           if (d.counts) upd.counts = d.counts;
           self.setState(upd);
         } else if (d && d.motivo === 'cerrada') {
@@ -606,7 +599,7 @@ class Component extends DCLogic {
       };
     });
     var canSend = !submitted && open && missing.length === 0 && !this.state.enviando && !!URL_VOTOS;
-    var sendHint = this.state.aviso ? this.state.aviso : !URL_VOTOS ? 'Falta conectar la hoja de votos.' : this.state.enviando ? 'Enviando tu voto…' : submitted ? 'Tu voto ya fue enviado.' : (!open ? 'La votación está cerrada.' : (missing.length ? 'Elige una foto en ' + missing.map(function (c) { return c.label; }).join(', ') + ' para poder enviar.' : 'Revisa tus elecciones y envía.'));
+    var sendHint = this.state.aviso ? this.state.aviso : !URL_VOTOS ? 'Falta conectar la hoja de votos.' : this.state.enviando ? 'Enviando tu voto…' : submitted ? (open ? '¿Quieres votar otra vez? Toca el botón.' : 'Tu voto fue enviado.') : (!open ? 'La votación está cerrada.' : (missing.length ? 'Elige una foto en ' + missing.map(function (c) { return c.label; }).join(', ') + ' para poder enviar.' : 'Revisa tus elecciones y envía.'));
     // Cielo nocturno: estrellas con posiciones fijas (pseudoaleatorias)
     if (!this._cielo) {
       var seed = 7;
@@ -671,12 +664,18 @@ class Component extends DCLogic {
       goNext: function () { if (next) self.setState({ city: next.id, lastPick: null }); },
       showTop: this.props.mostrarTop3 ?? true, top: top,
       gridStyle: 'display:grid;gap:24px;grid-template-columns:repeat(auto-fill, minmax(min(100%, ' + (city === 'quito' ? 340 : 250) + 'px), 1fr));',
-      submitted: submitted, resumen: resumen, cantSend: !canSend,
-      sendLabel: submitted ? '✓ Voto enviado' : 'Enviar mi voto',
+      submitted: submitted, resumen: resumen, cantSend: !(canSend || (submitted && open)),
+      sendLabel: submitted ? (open ? 'Votar otra vez' : '✓ Voto enviado') : 'Enviar mi voto',
       sendHint: sendHint,
-      sendStyle: 'min-height:52px;padding:0 32px;border-radius:999px;border:0;font-weight:700;font-size:18px;' + (canSend ? 'background:#ffffff;color:#0A2463;cursor:pointer;box-shadow:0 0 0 4px rgba(120,190,255,.35);' : (submitted ? 'background:#1E6FD0;color:#ffffff;cursor:default;' : 'background:#3A5488;color:#B9C8E4;cursor:not-allowed;')),
+      sendStyle: 'min-height:52px;padding:0 32px;border-radius:999px;border:0;font-weight:700;font-size:18px;' + (canSend || (submitted && open) ? 'background:#ffffff;color:#0A2463;cursor:pointer;box-shadow:0 0 0 4px rgba(120,190,255,.35);' : (submitted ? 'background:#1E6FD0;color:#ffffff;cursor:default;' : 'background:#3A5488;color:#B9C8E4;cursor:not-allowed;')),
       send: function () {
-        if (!canSend || Date.now() >= closeAt) return;
+        if (Date.now() >= closeAt) return;
+        if (self.state.submitted) {
+          // Empezar un voto nuevo
+          self.setState({ votes: { quito: null, guayaquil: null, cuenca: null }, submitted: false, lastPick: null, aviso: null, city: 'quito' });
+          return;
+        }
+        if (!canSend) return;
         self.enviarVoto(votes);
       }
     };

@@ -13,7 +13,8 @@ const json = (o, status = 200) =>
 async function prepararTabla(db) {
   if (tablaLista) return;
   await db.prepare(
-    "CREATE TABLE IF NOT EXISTS votos (votante TEXT PRIMARY KEY, quito TEXT NOT NULL, guayaquil TEXT NOT NULL, cuenca TEXT NOT NULL, creado TEXT NOT NULL DEFAULT (datetime('now')))"
+    // Cada voto es una fila nueva: una misma persona puede votar varias veces
+    "CREATE TABLE IF NOT EXISTS votos_todos (id INTEGER PRIMARY KEY AUTOINCREMENT, votante TEXT NOT NULL, quito TEXT NOT NULL, guayaquil TEXT NOT NULL, cuenca TEXT NOT NULL, creado TEXT NOT NULL DEFAULT (datetime('now')))"
   ).run();
   tablaLista = true;
 }
@@ -21,7 +22,7 @@ async function prepararTabla(db) {
 async function conteo(db) {
   const c = { quito: {}, guayaquil: {}, cuenca: {} };
   for (const k of CIUDADES) {
-    const { results } = await db.prepare(`SELECT ${k} AS foto, COUNT(*) AS n FROM votos GROUP BY ${k}`).all();
+    const { results } = await db.prepare(`SELECT ${k} AS foto, COUNT(*) AS n FROM votos_todos GROUP BY ${k}`).all();
     for (const r of results) c[k][r.foto] = r.n;
   }
   return c;
@@ -34,10 +35,9 @@ async function votar(request, db) {
   const valido = /^v-[a-z0-9-]{4,40}$/.test(d.votante || '') &&
     CIUDADES.every((k) => new RegExp('^' + k + '-\\d{1,3}$').test(d[k] || ''));
   if (!valido) return json({ ok: false, motivo: 'datos' }, 400);
-  const r = await db.prepare('INSERT OR IGNORE INTO votos (votante, quito, guayaquil, cuenca) VALUES (?, ?, ?, ?)')
+  await db.prepare('INSERT INTO votos_todos (votante, quito, guayaquil, cuenca) VALUES (?, ?, ?, ?)')
     .bind(d.votante, d.quito, d.guayaquil, d.cuenca).run();
-  const nuevo = !!(r.meta && r.meta.changes > 0);
-  return json({ ok: nuevo, motivo: nuevo ? undefined : 'ya_voto', counts: await conteo(db) });
+  return json({ ok: true, counts: await conteo(db) });
 }
 
 const foto = (id) => { const n = parseInt(String(id).split('-')[1], 10) + 1; return 'Foto ' + (n < 10 ? '0' : '') + n; };
@@ -47,9 +47,9 @@ async function exportar(url, env) {
   const clave = url.searchParams.get('clave') || '';
   if (!env.CLAVE_ADMIN || clave !== env.CLAVE_ADMIN) return new Response('Clave incorrecta', { status: 401 });
   const { results } = await env.DB.prepare(
-    "SELECT datetime(creado, '-5 hours') AS creado, votante, quito, guayaquil, cuenca FROM votos ORDER BY creado"
+    "SELECT datetime(creado, '-5 hours') AS creado, votante, quito, guayaquil, cuenca FROM votos_todos ORDER BY id"
   ).all();
-  const filas = [['Fecha y hora (Ecuador)', 'ID votante', 'Quito', 'Guayaquil', 'Cuenca']]
+  const filas = [['Fecha y hora (Ecuador)', 'ID dispositivo', 'Quito', 'Guayaquil', 'Cuenca']]
     .concat(results.map((r) => [r.creado, r.votante, foto(r.quito), foto(r.guayaquil), foto(r.cuenca)]));
   const csv = '﻿' + filas.map((f) => f.map(celda).join(';')).join('\r\n');
   return new Response(csv, {
