@@ -1,0 +1,14 @@
+{
+  // Configuración del Worker de Cloudflare
+  "name": "humana-votacion",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS"
+  },
+  // Base de datos de votos. Cloudflare la crea sola en el primer despliegue.
+  "d1_databases": [
+    { "binding": "DB", "database_name": "votos-humana" }
+  ]
+}
