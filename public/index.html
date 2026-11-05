@@ -470,7 +470,7 @@ class Component extends DCLogic {
         .catch(function () {});
     };
     cargar();
-    this._conteo = setInterval(cargar, 15000);
+    this._conteo = setInterval(function () { if (!document.hidden) cargar(); }, 30000);
   }
   enviarVoto(votes) {
     var self = this;

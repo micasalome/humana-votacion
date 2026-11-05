@@ -63,17 +63,34 @@ async function verificarTurnstile(token, ip, secreto) {
   } catch (e) { return false; }
 }
 
+// Conteo rápido: se lee la tabla "resumen" (una fila por foto) en vez de recorrer todos los votos.
+// Así cada visita lee ~70 filas y no miles (el plan gratis de Cloudflare permite 5 millones de lecturas al día).
+let resumenListo = false;
+async function prepararResumen(db) {
+  if (resumenListo) return;
+  await db.prepare('CREATE TABLE IF NOT EXISTS resumen (ciudad TEXT NOT NULL, foto TEXT NOT NULL, n INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (ciudad, foto))').run();
+  await db.prepare('CREATE TABLE IF NOT EXISTS ajustes (clave TEXT PRIMARY KEY, valor TEXT)').run();
+  const hecho = await db.prepare("SELECT valor FROM ajustes WHERE clave = 'resumen_v1'").first();
+  if (!hecho) {
+    // Una sola vez: se arma el resumen con los votos de antes del lanzamiento (votos_publico) y los actuales (votos_campana)
+    const armar = (conVieja) => db.batch([
+      db.prepare('DELETE FROM resumen'),
+      ...CIUDADES.map((k) => db.prepare(
+        `INSERT INTO resumen (ciudad, foto, n) SELECT '${k}', foto, SUM(n) FROM (` +
+        (conVieja ? `SELECT ${k} AS foto, COUNT(*) AS n FROM votos_publico WHERE ${k} <> '' GROUP BY ${k} UNION ALL ` : '') +
+        `SELECT ${k} AS foto, COUNT(*) AS n FROM votos_campana WHERE ${k} <> '' GROUP BY ${k}) GROUP BY foto`
+      )),
+      db.prepare("INSERT OR REPLACE INTO ajustes (clave, valor) VALUES ('resumen_v1', datetime('now'))")
+    ]);
+    try { await armar(true); } catch (e) { await armar(false); } // si la tabla vieja no existe, solo los actuales
+  }
+  resumenListo = true;
+}
+
 async function conteo(db) {
   const c = { quito: {}, guayaquil: {}, cuenca: {} };
-  // Se suman los votos de antes del lanzamiento (votos_publico, 12:55-15:09 del 5 nov) y los actuales (votos_campana)
-  for (const tabla of ['votos_publico', 'votos_campana']) {
-    for (const k of CIUDADES) {
-      let results = [];
-      try { ({ results } = await db.prepare(`SELECT ${k} AS foto, COUNT(*) AS n FROM ${tabla} WHERE ${k} <> '' GROUP BY ${k}`).all()); }
-      catch (e) { if (tabla === 'votos_campana') throw e; } // si la tabla vieja no existe, se ignora
-      for (const r of results) c[k][r.foto] = (c[k][r.foto] || 0) + r.n;
-    }
-  }
+  const { results } = await db.prepare('SELECT ciudad, foto, n FROM resumen').all();
+  for (const r of results) if (c[r.ciudad]) c[r.ciudad][r.foto] = r.n;
   return c;
 }
 
@@ -112,12 +129,13 @@ async function votar(request, env) {
   try { seg = Math.max(await espera('votante', d.votante, LIMITES.dispositivo), await espera('conexion', conexion, LIMITES.conexion)); } catch (e) { seg = 0; }
   if (seg > 0) return json({ ok: false, motivo: 'rapido', espera: Math.max(1, seg) }, 429);
 
+  const sumar = CIUDADES.map((k) => db.prepare('INSERT INTO resumen (ciudad, foto, n) VALUES (?, ?, 1) ON CONFLICT (ciudad, foto) DO UPDATE SET n = n + 1').bind(k, d[k]));
   try {
-    await db.prepare('INSERT INTO votos_campana (votante, quito, guayaquil, cuenca, conexion, navegador, pais, verificado) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
-      .bind(d.votante, d.quito, d.guayaquil, d.cuenca, conexion, navegador, pais, verificado).run();
+    await db.batch([db.prepare('INSERT INTO votos_campana (votante, quito, guayaquil, cuenca, conexion, navegador, pais, verificado) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+      .bind(d.votante, d.quito, d.guayaquil, d.cuenca, conexion, navegador, pais, verificado), ...sumar]);
   } catch (e) {
-    await db.prepare('INSERT INTO votos_campana (votante, quito, guayaquil, cuenca) VALUES (?, ?, ?, ?)')
-      .bind(d.votante, d.quito, d.guayaquil, d.cuenca).run();
+    await db.batch([db.prepare('INSERT INTO votos_campana (votante, quito, guayaquil, cuenca) VALUES (?, ?, ?, ?)')
+      .bind(d.votante, d.quito, d.guayaquil, d.cuenca), ...sumar]);
   }
   return json({ ok: true, counts: await conteo(db) });
 }
@@ -196,6 +214,7 @@ export default {
     if (url.pathname === '/api/votos' || url.pathname === '/api/exportar' || url.pathname === '/api/revisar') {
       try {
         await prepararTabla(env.DB);
+        await prepararResumen(env.DB);
         if (url.pathname === '/api/exportar') return await exportar(url, env);
         if (url.pathname === '/api/revisar') return await revisar(url, env);
         if (request.method === 'POST') return await votar(request, env);
