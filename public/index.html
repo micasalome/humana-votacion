@@ -110,7 +110,7 @@ button{font-family:inherit}
             </div>
           </sc-if>
         </div>
-        <p style="margin: -10px 0 0; max-width: 560px; font-size: 13px; line-height: 1.4; font-style: italic; font-weight: 500; color: #BFD8F5">Debes votar obligatoriamente por una fotografía de cada una de las tres ciudades.</p>
+        <p style="margin: -10px 0 0; max-width: 560px; font-size: 13px; line-height: 1.4; font-style: italic; font-weight: 500; color: #BFD8F5">Pueden votar en una sola ciudad o en las tres: con elegir una foto ya pueden enviar su voto.</p>
       </div>
 
       <div class="hero-robot" style="position: absolute; z-index: 4; left: 0; top: 30px; width: 320px">
@@ -162,7 +162,7 @@ button{font-family:inherit}
       <sc-if value="{{submitted}}" hint-placeholder-val="{{ false }}">
         <div role="status" style="display: flex; align-items: center; gap: 14px; background: #0B5AA6; color: #ffffff; border-radius: 20px; padding: 16px 22px; font-weight: 700; font-size: 17px">
           <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M7.5 12.5l3 3 6-6.5"></path></svg>
-          <span>¡Gracias! Su voto por Quito, Guayaquil y Cuenca fue enviado. Pueden volver a votar cuando quieran.</span>
+          <span>¡Gracias! Su voto por {{ciudadesVotadas}} fue enviado. Pueden volver a votar cuando quieran.</span>
         </div>
       </sc-if>
 
@@ -298,7 +298,7 @@ button{font-family:inherit}
         <div role="dialog" aria-modal="true" aria-labelledby="modal-titulo" style="width: 100%; max-width: 440px; background: #ffffff; border-radius: 28px; padding: 32px 26px 26px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 14px; box-shadow: 0 0 0 4px rgba(143, 216, 255, 0.5), 0 30px 60px rgba(0, 0, 0, 0.45)">
           <span aria-hidden="true" style="font-size: 56px; line-height: 1">🎉</span>
           <h2 id="modal-titulo" style="margin: 0; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 30px; line-height: 1.15; color: #0B5AA6">¡Gracias por su voto!</h2>
-          <p style="margin: 0; font-size: 17px; line-height: 1.45; font-weight: 600; color: #2D4F78">Su voto por Quito, Guayaquil y Cuenca quedó guardado. ¿Quieren volver a votar?</p>
+          <p style="margin: 0; font-size: 17px; line-height: 1.45; font-weight: 600; color: #2D4F78">Su voto por {{ciudadesVotadas}} quedó guardado. ¿Quieren volver a votar?</p>
           <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; margin-top: 8px">
             <button onClick="{{revotar}}" style="min-height: 52px; border-radius: 999px; border: 0; background: #0B5AA6; color: #ffffff; font-weight: 700; font-size: 18px; cursor: pointer; box-shadow: 0 8px 18px rgba(11, 90, 166, 0.35)">Sí, volver a votar</button>
             <button onClick="{{cerrarModal}}" style="min-height: 48px; border-radius: 999px; border: 2px solid #0B5AA6; background: #ffffff; color: #0B5AA6; font-weight: 700; font-size: 16px; cursor: pointer">No, ver resultados</button>
@@ -630,19 +630,20 @@ class Component extends DCLogic {
     var pickMsg = '';
     if (lastPick) {
       pickMsg = 'Eligieron: ' + tituloFoto(lastPick) + ' en ' + labelOf(lastPick.split('-')[0]) + '. ' +
-        (missing.length ? 'Les falta elegir en ' + missing.map(function (c) { return c.label; }).join(' y ') + '.' : '¡Ya eligieron en las 3 ciudades! Ahora envíen su voto.');
+        (missing.length ? 'Ya pueden enviar su voto, o también elegir en ' + missing.map(function (c) { return c.label; }).join(' y ') + '.' : '¡Ya eligieron en las 3 ciudades! Ahora envíen su voto.');
     }
     // Resumen y envío
+    var ciudadesVotadas = (function (l) { return l.length > 1 ? l.slice(0, -1).join(', ') + ' y ' + l[l.length - 1] : (l[0] || ''); })(cities.filter(function (c) { return !!votes[c.id]; }).map(function (c) { return c.label; }));
     var resumen = cities.map(function (c) {
       var pid = votes[c.id];
       return {
         label: c.label,
-        value: pid ? tituloFoto(pid) : 'Pendiente',
+        value: pid ? tituloFoto(pid) : 'Opcional',
         style: 'display:flex;flex-direction:column;gap:2px;min-width:110px;flex:1 1 0;padding:8px 14px;border-radius:14px;' + (pid ? 'background:#1E6FD0;' : 'background:transparent;border:1.5px dashed #6F95D6;')
       };
     });
-    var canSend = !submitted && open && missing.length === 0 && !this.state.enviando && !!URL_VOTOS;
-    var sendHint = this.state.aviso ? this.state.aviso : !URL_VOTOS ? 'Falta conectar la hoja de votos.' : this.state.enviando ? 'Enviando su voto…' : submitted ? (open ? '¿Quieren votar otra vez? Toquen el botón.' : 'Su voto fue enviado.') : (!open ? 'La votación está cerrada.' : (missing.length ? 'Elijan una foto en ' + missing.map(function (c) { return c.label; }).join(', ') + ' para poder enviar.' : 'Revisen sus elecciones y envíen.'));
+    var canSend = !submitted && open && missing.length < 3 && !this.state.enviando && !!URL_VOTOS;
+    var sendHint = this.state.aviso ? this.state.aviso : !URL_VOTOS ? 'Falta conectar la hoja de votos.' : this.state.enviando ? 'Enviando su voto…' : submitted ? (open ? '¿Quieren votar otra vez? Toquen el botón.' : 'Su voto fue enviado.') : (!open ? 'La votación está cerrada.' : (missing.length === 3 ? 'Elijan al menos una foto en cualquier ciudad para enviar.' : 'Listo: ya pueden enviar su voto.'));
     // Cielo nocturno: estrellas con posiciones fijas (pseudoaleatorias)
     if (!this._cielo) {
       var seed = 7;
@@ -712,6 +713,7 @@ class Component extends DCLogic {
       siguienteLabel: cities[(cities.map(function (c) { return c.id; }).indexOf(city) + 1) % 3].label,
       irAnterior: function () { self.irCiudad(-1); },
       irSiguiente: function () { self.irCiudad(1); },
+      ciudadesVotadas: ciudadesVotadas,
       showModal: !!this.state.modal && submitted,
       cerrarModal: function () {
         self.setState({ modal: false });

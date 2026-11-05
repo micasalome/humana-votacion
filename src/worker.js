@@ -22,7 +22,7 @@ async function prepararTabla(db) {
 async function conteo(db) {
   const c = { quito: {}, guayaquil: {}, cuenca: {} };
   for (const k of CIUDADES) {
-    const { results } = await db.prepare(`SELECT ${k} AS foto, COUNT(*) AS n FROM votos_todos GROUP BY ${k}`).all();
+    const { results } = await db.prepare(`SELECT ${k} AS foto, COUNT(*) AS n FROM votos_todos WHERE ${k} <> '' GROUP BY ${k}`).all();
     for (const r of results) c[k][r.foto] = r.n;
   }
   return c;
@@ -33,10 +33,11 @@ async function votar(request, db) {
   let d;
   try { d = JSON.parse(await request.text()); } catch (e) { return json({ ok: false, motivo: 'datos' }, 400); }
   const valido = /^v-[a-z0-9-]{4,40}$/.test(d.votante || '') &&
-    CIUDADES.every((k) => new RegExp('^' + k + '-\\d{1,3}$').test(d[k] || ''));
+    CIUDADES.every((k) => d[k] == null || d[k] === '' || new RegExp('^' + k + '-\\d{1,3}$').test(d[k])) &&
+    CIUDADES.some((k) => !!d[k]);
   if (!valido) return json({ ok: false, motivo: 'datos' }, 400);
   await db.prepare('INSERT INTO votos_todos (votante, quito, guayaquil, cuenca) VALUES (?, ?, ?, ?)')
-    .bind(d.votante, d.quito, d.guayaquil, d.cuenca).run();
+    .bind(d.votante, d.quito || '', d.guayaquil || '', d.cuenca || '').run();
   return json({ ok: true, counts: await conteo(db) });
 }
 
@@ -47,6 +48,7 @@ const NOMBRES = {
   cuenca: ['Francisco Bravo', 'Katy Quintuña', 'Daniela Barriga', 'Claudia Recalde']
 };
 const foto = (id) => {
+  if (!id) return '';
   const [ciudad, i] = String(id).split('-'); const n = parseInt(i, 10) + 1;
   const num = 'Foto ' + (n < 10 ? '0' : '') + n;
   const nombre = (NOMBRES[ciudad] || [])[n - 1];
