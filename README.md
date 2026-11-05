@@ -16,7 +16,7 @@ Los votos se guardan en una base de datos **Cloudflare D1**. No se necesita inic
 
 ## Anti-robots
 - Cada voto guarda la conexión (IP cifrada), el navegador y el país.
-- Límite: 1 voto cada 5 segundos por dispositivo y 20 votos por minuto por conexión.
+- Límites (`LIMITES` en `src/worker.js`): por dispositivo 1 voto cada 10 minutos y máx. 10 al día; por conexión máx. 20 por minuto y 300 por hora.
 - **Revisión:** abre `https://TU-ENLACE/api/revisar?clave=TU_CLAVE` para ver conexiones, dispositivos, minutos y combinaciones con más votos.
 - **Verificación Cloudflare Turnstile (opcional, recomendada):**
   1. Cloudflare › Turnstile › Add widget › nombre `humana-votacion` › Hostname: `humana-votacion.pasante-marketing.workers.dev` › Widget mode: *Invisible* › Create.

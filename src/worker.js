@@ -6,14 +6,25 @@
 //
 // Anti-robots:
 // - Cada voto guarda: conexión (IP cifrada, no se guarda la IP real), navegador y país.
-// - Límite de velocidad: máx. 1 voto cada 5 s por dispositivo y máx. 20 votos por minuto por conexión
-//   (una oficina comparte la misma conexión, por eso el límite por conexión es amplio).
+// - Límites de votos por periodo de tiempo: ver LIMITES (por dispositivo y por conexión).
 // - Si existen los secretos TURNSTILE_SITEKEY y TURNSTILE_SECRET, cada voto debe pasar la
 //   verificación de Cloudflare Turnstile (invisible para personas, bloquea robots).
 // - Todo lo demás: la página y las fotos (carpeta public/)
 
 const CIERRE = Date.parse('2026-11-11T17:00:00-05:00'); // miércoles 11 nov, 5:00 p. m. (Ecuador)
 const CIUDADES = ['quito', 'guayaquil', 'cuenca'];
+
+// Límites de votos por periodo de tiempo (cambiar aquí si hace falta)
+const LIMITES = {
+  dispositivo: [ // por celular/computador
+    { segundos: 600, max: 1 },    // 1 voto cada 10 minutos
+    { segundos: 86400, max: 10 }  // máximo 10 votos al día
+  ],
+  conexion: [ // por red (una oficina comparte la misma red, por eso es más amplio)
+    { segundos: 60, max: 20 },    // máximo 20 votos por minuto
+    { segundos: 3600, max: 300 }  // máximo 300 votos por hora
+  ]
+};
 let tablaLista = false;
 
 const json = (o, status = 200) =>
@@ -83,10 +94,18 @@ async function votar(request, env) {
     verificado = 1;
   }
 
-  // Límite de velocidad
-  const porDispositivo = await db.prepare("SELECT COUNT(*) AS n FROM votos_campana WHERE votante = ? AND creado >= datetime('now', '-5 seconds')").bind(d.votante).first();
-  const porConexion = await db.prepare("SELECT COUNT(*) AS n FROM votos_campana WHERE conexion = ? AND creado >= datetime('now', '-60 seconds')").bind(conexion).first();
-  if ((porDispositivo && porDispositivo.n >= 1) || (porConexion && porConexion.n >= 20)) return json({ ok: false, motivo: 'rapido' }, 429);
+  // Límites de votos por periodo de tiempo
+  const espera = async (campo, valor, reglas) => {
+    let max = 0;
+    for (const r of reglas) {
+      const f = await db.prepare(`SELECT COUNT(*) AS n, CAST(strftime('%s', MIN(creado)) AS INTEGER) AS primero FROM (SELECT creado FROM votos_campana WHERE ${campo} = ? AND creado >= datetime('now', ?) ORDER BY creado DESC LIMIT ?)`)
+        .bind(valor, '-' + r.segundos + ' seconds', r.max).first();
+      if (f && f.n >= r.max) max = Math.max(max, f.primero + r.segundos - Math.floor(Date.now() / 1000));
+    }
+    return max;
+  };
+  const seg = Math.max(await espera('votante', d.votante, LIMITES.dispositivo), await espera('conexion', conexion, LIMITES.conexion));
+  if (seg > 0) return json({ ok: false, motivo: 'rapido', espera: Math.max(1, seg) }, 429);
 
   await db.prepare('INSERT INTO votos_campana (votante, quito, guayaquil, cuenca, conexion, navegador, pais, verificado) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
     .bind(d.votante, d.quito, d.guayaquil, d.cuenca, conexion, navegador, pais, verificado).run();
