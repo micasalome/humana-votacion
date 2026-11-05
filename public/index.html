@@ -170,7 +170,10 @@ button{font-family:inherit}
         <sc-for list="{{cards}}" as="card" hint-placeholder-count="6">
           <article style="{{card.cardStyle}}">
             <sc-if value="{{card.hasPhoto}}" hint-placeholder-val="{{ false }}">
-              <img src="{{card.src}}" alt="{{card.alt}}" loading="lazy" style="{{card.imgStyle}}">
+              <div style="{{card.marcoStyle}}">
+                <img src="{{card.src}}" alt="" aria-hidden="true" loading="lazy" style="position: absolute; inset: -20px; width: calc(100% + 40px); height: calc(100% + 40px); object-fit: cover; filter: blur(18px) brightness(0.75); transform: scale(1.05)">
+                <img src="{{card.src}}" alt="{{card.alt}}" loading="lazy" decoding="async" style="position: relative; display: block; width: 100%; height: 100%; object-fit: contain; object-position: center">
+              </div>
             </sc-if>
             <sc-if value="{{card.noPhoto}}" hint-placeholder-val="{{ true }}">
               <div style="aspect-ratio: 4 / 5; background: linear-gradient(160deg, #DDF0FD 0%, #B5DDF8 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: #2D6CA8">
@@ -265,7 +268,10 @@ button{font-family:inherit}
               <sc-for list="{{col.rows}}" as="r" hint-placeholder-count="1">
                 <div style="display: flex; flex-direction: column; gap: 14px">
                   <div style="position: relative; border-radius: 20px; overflow: hidden; box-shadow: 0 0 0 4px #F5C542">
-                    <img src="{{r.src}}" alt="{{r.title}} de {{col.label}}, la más votada" style="{{r.imgStyle}}">
+                    <div style="position: relative; overflow: hidden; aspect-ratio: 4 / 3; background: #0A2463">
+                      <img src="{{r.src}}" alt="" aria-hidden="true" style="position: absolute; inset: -20px; width: calc(100% + 40px); height: calc(100% + 40px); object-fit: cover; filter: blur(18px) brightness(0.75)">
+                      <img src="{{r.src}}" alt="{{r.title}} de {{col.label}}, la más votada" decoding="async" style="position: relative; display: block; width: 100%; height: 100%; object-fit: contain; object-position: center">
+                    </div>
                     <span style="position: absolute; top: 12px; left: 12px; display: inline-flex; align-items: center; gap: 6px; background: #F5C542; color: #5A3E00; border-radius: 999px; padding: 6px 12px; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 15px; box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25)">
                       <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"></path><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"></path></svg>
                       Va ganando
@@ -566,7 +572,7 @@ class Component extends DCLogic {
           noPhoto: !foto,
           src: foto ? foto.src : '',
           alt: 'Foto ' + (idx + 1) + ' de ' + cityLabel,
-          imgStyle: 'display:block;width:100%;aspect-ratio:' + ((foto && foto.ar) || '4 / 5') + ';object-fit:cover;object-position:' + (foto ? foto.pos : 'center') + ';',
+          marcoStyle: 'position:relative;overflow:hidden;background:#0A2463;aspect-ratio:' + ((foto && foto.ar) || '4 / 5') + ';',
           selected: selected,
           disabled: submitted || !open || selected,
           btnLabel: submitted ? (selected ? '✓ Su voto' : 'Voto enviado') : (!open ? 'Votación cerrada' : (selected ? '✓ Elegida' : (myVote ? 'Cambiar a esta foto' : 'Elegir esta foto'))),
