@@ -503,6 +503,7 @@ class Component extends DCLogic {
       };
     });
     // Fotos cargadas por ciudad (las ciudades sin fotos muestran espacios de muestra)
+    var NOMBRES_QUITO = ['Auditoría Médica', 'Técnico de Riesgos', 'Gerencia General', 'Inteligencia de Negocios', 'Liquidaciones', 'Cobranzas', 'CX Corporativo', 'Legal y Cumplimiento', 'Contabilidad', 'Compras y Administración', 'Sala de Ventas 4', 'Sala de Ventas 2', 'Calidad, Engagement y CX (Front)', 'Sala de Ventas 8', 'Sala de Ventas 10', 'Lealtad', 'Sala de Ventas 6', 'Sala de Ventas 14', 'Convenios', 'TI', 'Tesorería', 'Gestión de Proyectos', 'Producción', 'Talento Humano'];
     var fotos = {
       quito: [
         'img/quito-01.jpg', 'img/quito-02.jpg',
@@ -517,7 +518,7 @@ class Component extends DCLogic {
         'img/quito-19.jpg', 'img/quito-20.jpg',
         'img/quito-21.jpg', 'img/quito-22.jpg',
         'img/quito-23.jpg', 'img/quito-24.jpg'
-      ].map(function (s) { return { src: s, pos: 'center' }; }),
+      ].map(function (s, i) { return { src: s, pos: 'center', nombre: NOMBRES_QUITO[i] }; }),
       guayaquil: [
         { src: 'img/guayaquil-01.jpg', pos: '50% 25%', nombre: 'Josias Rojas' },
         { src: 'img/guayaquil-02.jpg', pos: '50% 30%', nombre: 'Gustavo Rojas' },
