@@ -110,7 +110,7 @@ button{font-family:inherit}
             </div>
           </sc-if>
         </div>
-        <p style="margin: -10px 0 0; max-width: 560px; font-size: 13px; line-height: 1.4; font-style: italic; font-weight: 500; color: #BFD8F5">Pueden votar en una sola ciudad o en las tres: con elegir una foto ya pueden enviar su voto.</p>
+        <p style="margin: -10px 0 0; max-width: 560px; font-size: 13px; line-height: 1.4; font-style: italic; font-weight: 500; color: #BFD8F5">Deben votar obligatoriamente por una fotografía de cada una de las tres ciudades para enviar su voto.</p>
       </div>
 
       <div class="hero-robot" style="position: absolute; z-index: 4; left: 0; top: 30px; width: 320px">
@@ -630,7 +630,7 @@ class Component extends DCLogic {
     var pickMsg = '';
     if (lastPick) {
       pickMsg = 'Eligieron: ' + tituloFoto(lastPick) + ' en ' + labelOf(lastPick.split('-')[0]) + '. ' +
-        (missing.length ? 'Ya pueden enviar su voto, o también elegir en ' + missing.map(function (c) { return c.label; }).join(' y ') + '.' : '¡Ya eligieron en las 3 ciudades! Ahora envíen su voto.');
+        (missing.length ? 'Les falta elegir en ' + missing.map(function (c) { return c.label; }).join(' y ') + '.' : '¡Ya eligieron en las 3 ciudades! Ahora envíen su voto.');
     }
     // Resumen y envío
     var ciudadesVotadas = (function (l) { return l.length > 1 ? l.slice(0, -1).join(', ') + ' y ' + l[l.length - 1] : (l[0] || ''); })(cities.filter(function (c) { return !!votes[c.id]; }).map(function (c) { return c.label; }));
@@ -638,12 +638,12 @@ class Component extends DCLogic {
       var pid = votes[c.id];
       return {
         label: c.label,
-        value: pid ? tituloFoto(pid) : 'Opcional',
+        value: pid ? tituloFoto(pid) : 'Pendiente',
         style: 'display:flex;flex-direction:column;gap:2px;min-width:110px;flex:1 1 0;padding:8px 14px;border-radius:14px;' + (pid ? 'background:#1E6FD0;' : 'background:transparent;border:1.5px dashed #6F95D6;')
       };
     });
-    var canSend = !submitted && open && missing.length < 3 && !this.state.enviando && !!URL_VOTOS;
-    var sendHint = this.state.aviso ? this.state.aviso : !URL_VOTOS ? 'Falta conectar la hoja de votos.' : this.state.enviando ? 'Enviando su voto…' : submitted ? (open ? '¿Quieren votar otra vez? Toquen el botón.' : 'Su voto fue enviado.') : (!open ? 'La votación está cerrada.' : (missing.length === 3 ? 'Elijan al menos una foto en cualquier ciudad para enviar.' : 'Listo: ya pueden enviar su voto.'));
+    var canSend = !submitted && open && missing.length === 0 && !this.state.enviando && !!URL_VOTOS;
+    var sendHint = this.state.aviso ? this.state.aviso : !URL_VOTOS ? 'Falta conectar la hoja de votos.' : this.state.enviando ? 'Enviando su voto…' : submitted ? (open ? '¿Quieren votar otra vez? Toquen el botón.' : 'Su voto fue enviado.') : (!open ? 'La votación está cerrada.' : (missing.length ? 'Elijan una foto en ' + missing.map(function (c) { return c.label; }).join(', ') + ' para poder enviar.' : 'Listo: ya pueden enviar su voto.'));
     // Cielo nocturno: estrellas con posiciones fijas (pseudoaleatorias)
     if (!this._cielo) {
       var seed = 7;

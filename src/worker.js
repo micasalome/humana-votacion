@@ -33,8 +33,7 @@ async function votar(request, db) {
   let d;
   try { d = JSON.parse(await request.text()); } catch (e) { return json({ ok: false, motivo: 'datos' }, 400); }
   const valido = /^v-[a-z0-9-]{4,40}$/.test(d.votante || '') &&
-    CIUDADES.every((k) => d[k] == null || d[k] === '' || new RegExp('^' + k + '-\\d{1,3}$').test(d[k])) &&
-    CIUDADES.some((k) => !!d[k]);
+    CIUDADES.every((k) => new RegExp('^' + k + '-\\d{1,3}$').test(d[k] || '')); // obligatorio: una foto por cada ciudad
   if (!valido) return json({ ok: false, motivo: 'datos' }, 400);
   await db.prepare('INSERT INTO votos_publico (votante, quito, guayaquil, cuenca) VALUES (?, ?, ?, ?)')
     .bind(d.votante, d.quito || '', d.guayaquil || '', d.cuenca || '').run();
