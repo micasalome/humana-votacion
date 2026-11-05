@@ -268,7 +268,7 @@ button{font-family:inherit}
               <sc-for list="{{col.rows}}" as="r" hint-placeholder-count="1">
                 <div style="display: flex; flex-direction: column; gap: 14px">
                   <div style="position: relative; border-radius: 20px; overflow: hidden; box-shadow: 0 0 0 4px #F5C542">
-                    <div style="position: relative; overflow: hidden; aspect-ratio: 4 / 3; background: #0A2463">
+                    <div style="{{r.marcoStyle}}">
                       <img src="{{r.src}}" alt="" aria-hidden="true" style="position: absolute; inset: -20px; width: calc(100% + 40px); height: calc(100% + 40px); object-fit: cover; filter: blur(18px) brightness(0.75)">
                       <img src="{{r.src}}" alt="{{r.title}} de {{col.label}}, la más votada" decoding="async" style="position: relative; display: block; width: 100%; height: 100%; object-fit: contain; object-position: center">
                     </div>
@@ -615,7 +615,7 @@ class Component extends DCLogic {
             rank: r + 1,
             title: tituloFoto(pid),
             hasPhoto: !!f, noPhoto: !f, src: f ? f.src : '',
-            imgStyle: 'display:block;width:100%;aspect-ratio:4 / 3;object-fit:cover;object-position:' + (f ? f.pos : 'center') + ';',
+            marcoStyle: 'position:relative;overflow:hidden;background:#0A2463;aspect-ratio:4 / 5;',
             votesLabel: v + (v === 1 ? ' voto' : ' votos'),
             shareLabel: Math.round(v / total * 100) + '% de los votos de ' + c.label,
             barStyle: 'height:100%;border-radius:999px;background:#0B5AA6;width:' + Math.round(v / total * 100) + '%;'
