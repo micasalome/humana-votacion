@@ -5,6 +5,8 @@
 
 const CIERRE = Date.parse('2026-11-11T17:00:00-05:00'); // miércoles 11 nov, 5:00 p. m. (Ecuador)
 const CIUDADES = ['quito', 'guayaquil', 'cuenca'];
+// Votación en pausa: no se aceptan votos nuevos (los votos guardados y los resultados se mantienen). Cambiar a false para reabrir.
+const PAUSADA = true;
 let tablaLista = false;
 
 const json = (o, status = 200) =>
@@ -51,6 +53,7 @@ async function conteo(db) {
 }
 
 async function votar(request, db) {
+  if (PAUSADA) return json({ ok: false, motivo: 'pausada' });
   if (Date.now() >= CIERRE) return json({ ok: false, motivo: 'cerrada' });
   let d;
   try { d = JSON.parse(await request.text()); } catch (e) { return json({ ok: false, motivo: 'datos' }, 400); }
@@ -109,7 +112,7 @@ export default {
         await prepararResumen(env.DB);
         if (url.pathname === '/api/exportar') return await exportar(url, env);
         if (request.method === 'POST') return await votar(request, env.DB);
-        return json({ ok: true, counts: await conteo(env.DB) });
+        return json({ ok: true, pausada: PAUSADA, counts: await conteo(env.DB) });
       } catch (e) {
         return json({ ok: false, motivo: 'servidor', detalle: String(e && e.message || e).slice(0, 300) }, 500);
       }

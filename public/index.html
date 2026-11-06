@@ -105,8 +105,8 @@ button{font-family:inherit}
           </sc-if>
           <sc-if value="{{closed}}" hint-placeholder-val="{{ false }}">
             <div style="display: flex; flex-direction: column; gap: 4px; text-align: center">
-              <span style="font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 28px; color: #ffffff">La votación ha cerrado</span>
-              <span style="font-weight: 600; font-size: 15px; color: #BFE3FF">Cerró el miércoles 11 de noviembre a las 5:00 p. m. ¡Gracias por participar!</span>
+              <span style="font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 28px; color: #ffffff">{{cerradoTitulo}}</span>
+              <span style="font-weight: 600; font-size: 15px; color: #BFE3FF">{{cerradoTexto}}</span>
             </div>
           </sc-if>
         </div>
@@ -427,7 +427,7 @@ class Component extends DCLogic {
     var cargar = function () {
       fetch(URL_VOTOS + '?accion=conteo&t=' + Date.now())
         .then(function (r) { return r.json(); })
-        .then(function (d) { if (d && d.counts) self.setState({ counts: d.counts }); })
+        .then(function (d) { if (d && d.counts) self.setState({ counts: d.counts, pausada: !!d.pausada }); })
         .catch(function () {});
     };
     cargar();
@@ -445,6 +445,8 @@ class Component extends DCLogic {
           var upd = { submitted: true, enviando: false, lastPick: null, modal: true };
           if (d.counts) upd.counts = d.counts;
           self.setState(upd);
+        } else if (d && d.motivo === 'pausada') {
+          self.setState({ enviando: false, pausada: true, aviso: 'La votación está en pausa por el momento.' });
         } else if (d && d.motivo === 'cerrada') {
           self.setState({ enviando: false, aviso: 'La votación ya cerró.' });
         } else {
@@ -468,7 +470,8 @@ class Component extends DCLogic {
     // Cierre: miércoles 11 nov 2026, 5:00 p. m. hora de Ecuador (UTC-5)
     var closeAt = Date.parse('2026-11-11T17:00:00-05:00');
     var left = Math.max(0, closeAt - this.state.now);
-    var open = left > 0;
+    var pausada = !!this.state.pausada;
+    var open = left > 0 && !pausada;
     var s = Math.floor(left / 1000);
     var pad = function (x) { return (x < 10 ? '0' : '') + x; };
     var countdown = [
@@ -575,7 +578,7 @@ class Component extends DCLogic {
           imgStyle: 'display:block;width:100%;height:100%;object-fit:cover;object-position:' + (foto ? foto.pos : 'center') + ';',
           selected: selected,
           disabled: submitted || !open || selected,
-          btnLabel: submitted ? (selected ? '✓ Su voto' : 'Voto enviado') : (!open ? 'Votación cerrada' : (selected ? '✓ Elegida' : (myVote ? 'Cambiar a esta foto' : 'Elegir esta foto'))),
+          btnLabel: submitted ? (selected ? '✓ Su voto' : 'Voto enviado') : (!open ? (pausada ? 'Votación en pausa' : 'Votación cerrada') : (selected ? '✓ Elegida' : (myVote ? 'Cambiar a esta foto' : 'Elegir esta foto'))),
           vote: function () {
             if (self.state.submitted || Date.now() >= closeAt) return;
             var v = Object.assign({}, self.state.votes);
@@ -643,7 +646,7 @@ class Component extends DCLogic {
       };
     });
     var canSend = !submitted && open && missing.length === 0 && !this.state.enviando && !!URL_VOTOS;
-    var sendHint = this.state.aviso ? this.state.aviso : !URL_VOTOS ? 'Falta conectar la hoja de votos.' : this.state.enviando ? 'Enviando su voto…' : submitted ? (open ? '¿Quieren votar otra vez? Toquen el botón.' : 'Su voto fue enviado.') : (!open ? 'La votación está cerrada.' : (missing.length ? 'Elijan una foto en ' + missing.map(function (c) { return c.label; }).join(', ') + ' para poder enviar.' : 'Listo: ya pueden enviar su voto.'));
+    var sendHint = this.state.aviso ? this.state.aviso : !URL_VOTOS ? 'Falta conectar la hoja de votos.' : this.state.enviando ? 'Enviando su voto…' : submitted ? (open ? '¿Quieren votar otra vez? Toquen el botón.' : 'Su voto fue enviado.') : (!open ? (pausada ? 'La votación está en pausa.' : 'La votación está cerrada.') : (missing.length ? 'Elijan una foto en ' + missing.map(function (c) { return c.label; }).join(', ') + ' para poder enviar.' : 'Listo: ya pueden enviar su voto.'));
     // Cielo nocturno: estrellas con posiciones fijas (pseudoaleatorias)
     if (!this._cielo) {
       var seed = 7;
@@ -714,6 +717,8 @@ class Component extends DCLogic {
       irAnterior: function () { self.irCiudad(-1); },
       irSiguiente: function () { self.irCiudad(1); },
       ciudadesVotadas: ciudadesVotadas,
+      cerradoTitulo: pausada ? 'Votación en pausa' : 'La votación ha cerrado',
+      cerradoTexto: pausada ? 'Por el momento no se reciben votos. Los resultados se mantienen.' : 'Cerró el miércoles 11 de noviembre a las 5:00 p. m. ¡Gracias por participar!',
       showModal: !!this.state.modal && submitted,
       cerrarModal: function () {
         self.setState({ modal: false });
