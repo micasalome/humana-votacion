@@ -3,6 +3,8 @@
 // - /api/exportar  GET ?clave=...: descarga todos los votos en CSV (se abre en Excel)
 // - Todo lo demás: la página y las fotos (carpeta public/)
 
+import { LIMPIEZA_1 } from './limpieza1.js';
+
 const CIERRE = Date.parse('2026-11-11T17:00:00-05:00'); // miércoles 11 nov, 5:00 p. m. (Ecuador)
 const CIUDADES = ['quito', 'guayaquil', 'cuenca'];
 // Votación en pausa: no se aceptan votos nuevos (los votos guardados y los resultados se mantienen). Cambiar a false para reabrir.
@@ -43,6 +45,49 @@ async function prepararResumen(db) {
     try { await armar(true); } catch (e) { await armar(false); }
   }
   resumenListo = true;
+}
+
+// Limpieza única de votos indicados por Humana (votos-humana_BORRAR.xlsx).
+// Todo va en un solo lote atómico y protegido por la marca 'limpieza_1': se aplica una sola vez.
+let limpiezaLista = false;
+async function aplicarLimpieza(db) {
+  if (limpiezaLista) return;
+  const hecho = await db.prepare("SELECT valor FROM ajustes WHERE clave = 'limpieza_1'").first();
+  if (hecho) { limpiezaLista = true; return; }
+  const G = "NOT EXISTS (SELECT 1 FROM ajustes WHERE clave = 'limpieza_1')";
+  const lote = (conVieja) => {
+    const fuente = (conVieja
+      ? "SELECT 'p' AS tb, id, votante AS v, datetime(creado, '-5 hours') AS f, quito AS q, guayaquil AS g, cuenca AS c FROM votos_publico UNION ALL "
+      : '') +
+      "SELECT 'c' AS tb, id, votante AS v, datetime(creado, '-5 hours') AS f, quito AS q, guayaquil AS g, cuenca AS c FROM votos_campana";
+    return [
+      db.prepare('CREATE TABLE IF NOT EXISTS borrar (f TEXT, v TEXT, q TEXT, g TEXT, c TEXT, n INTEGER)'),
+      db.prepare('CREATE TABLE IF NOT EXISTS borrar_ids (tb TEXT, id INTEGER)'),
+      db.prepare('DELETE FROM borrar'),
+      db.prepare('DELETE FROM borrar_ids'),
+      ...LIMPIEZA_1.map((sql) => db.prepare(sql)),
+      db.prepare(
+        'INSERT INTO borrar_ids (tb, id) SELECT tb, id FROM (' +
+        'SELECT t.tb, t.id, b.n, ROW_NUMBER() OVER (PARTITION BY t.v, t.f, t.q, t.g, t.c ORDER BY t.tb DESC, t.id) AS rn ' +
+        'FROM (' + fuente + ') t JOIN borrar b ON b.v = t.v AND b.f = t.f AND b.q = t.q AND b.g = t.g AND b.c = t.c' +
+        ') WHERE rn <= n AND ' + G
+      ),
+      ...(conVieja ? [db.prepare("DELETE FROM votos_publico WHERE id IN (SELECT id FROM borrar_ids WHERE tb = 'p')")] : []),
+      db.prepare("DELETE FROM votos_campana WHERE id IN (SELECT id FROM borrar_ids WHERE tb = 'c')"),
+      db.prepare('DELETE FROM resumen'),
+      ...CIUDADES.map((k) => db.prepare(
+        `INSERT INTO resumen (ciudad, foto, n) SELECT '${k}', foto, SUM(n) FROM (` +
+        (conVieja ? `SELECT ${k} AS foto, COUNT(*) AS n FROM votos_publico WHERE ${k} <> '' GROUP BY ${k} UNION ALL ` : '') +
+        `SELECT ${k} AS foto, COUNT(*) AS n FROM votos_campana WHERE ${k} <> '' GROUP BY ${k}) GROUP BY foto`
+      )),
+      db.prepare(
+        "INSERT INTO ajustes (clave, valor) SELECT 'limpieza_1', 'borrados ' || (SELECT COUNT(*) FROM borrar_ids) || ' de ' || (SELECT SUM(n) FROM borrar) || ' · ' || datetime('now', '-5 hours') WHERE " + G
+      ),
+      db.prepare('DELETE FROM borrar')
+    ];
+  };
+  try { await db.batch(lote(true)); } catch (e) { await db.batch(lote(false)); }
+  limpiezaLista = true;
 }
 
 async function conteo(db) {
@@ -110,6 +155,7 @@ export default {
       try {
         await prepararTabla(env.DB);
         await prepararResumen(env.DB);
+        await aplicarLimpieza(env.DB);
         if (url.pathname === '/api/exportar') return await exportar(url, env);
         if (request.method === 'POST') return await votar(request, env.DB);
         return json({ ok: true, pausada: PAUSADA, counts: await conteo(env.DB) });
