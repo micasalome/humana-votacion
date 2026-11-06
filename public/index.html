@@ -110,7 +110,7 @@ button{font-family:inherit}
             </div>
           </sc-if>
         </div>
-        <p style="margin: -10px 0 0; max-width: 560px; font-size: 13px; line-height: 1.4; font-style: italic; font-weight: 500; color: #BFD8F5">Deben votar obligatoriamente por una fotografía de cada una de las tres ciudades para enviar su voto.</p>
+        <p style="margin: -10px 0 0; max-width: 560px; font-size: 13px; line-height: 1.4; font-style: italic; font-weight: 500; color: #BFD8F5">Deben votar obligatoriamente por una fotografía de cada una de las tres ciudades y registrarse con su nombre, apellido y correo. Un voto por persona.</p>
       </div>
 
       <div class="hero-robot" style="position: absolute; z-index: 4; left: 0; top: 30px; width: 320px">
@@ -126,7 +126,7 @@ button{font-family:inherit}
     <section class="panel" aria-labelledby="titulo-votacion" style="position: relative; z-index: 3; background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(12px); border: 1.5px solid rgba(255, 255, 255, 0.9); border-radius: 36px; padding: 40px; display: flex; flex-direction: column; gap: 28px; box-shadow: 0 24px 60px rgba(6, 47, 99, 0.18)">
       <div style="display: flex; flex-direction: column; gap: 8px; text-align: center; align-items: center">
         <h2 class="panel-titulo" id="titulo-votacion" style="margin: 0; font-family: 'Fredoka', 'Baloo 2', sans-serif; font-weight: 700; font-size: 42px; line-height: 1.1; color: #0B5AA6">¡Las mejores fotos necesitan sus votos! 🤖</h2>
-        <p style="margin: 0; max-width: 620px; font-size: 18px; line-height: 1.45; font-weight: 600; color: #2D4F78">Exploren las fotos de cada ciudad, elijan sus favoritas y voten cuantas veces quieran.</p>
+        <p style="margin: 0; max-width: 620px; font-size: 18px; line-height: 1.45; font-weight: 600; color: #2D4F78">Exploren las fotos de cada ciudad, elijan sus favoritas y registren su voto. Un voto por persona.</p>
       </div>
 
       <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px 24px; padding-bottom: 20px; border-bottom: 1.5px solid #DCEAF8">
@@ -162,7 +162,7 @@ button{font-family:inherit}
       <sc-if value="{{submitted}}" hint-placeholder-val="{{ false }}">
         <div role="status" style="display: flex; align-items: center; gap: 14px; background: #0B5AA6; color: #ffffff; border-radius: 20px; padding: 16px 22px; font-weight: 700; font-size: 17px">
           <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M7.5 12.5l3 3 6-6.5"></path></svg>
-          <span>¡Gracias! Su voto por {{ciudadesVotadas}} fue enviado. Pueden volver a votar cuando quieran.</span>
+          <span>¡Gracias! Su voto por {{ciudadesVotadas}} quedó registrado.</span>
         </div>
       </sc-if>
 
@@ -293,15 +293,42 @@ button{font-family:inherit}
       </section>
     </sc-if>
 
+    <sc-if value="{{showRegistro}}" hint-placeholder-val="{{ false }}">
+      <div style="position: fixed; inset: 0; z-index: 50; background: rgba(2, 8, 30, 0.72); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 20px; overflow-y: auto">
+        <form role="dialog" aria-modal="true" aria-labelledby="registro-titulo" onSubmit="{{noEnviarForm}}" style="width: 100%; max-width: 460px; background: #ffffff; border-radius: 28px; padding: 30px 26px 24px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 0 0 4px rgba(143, 216, 255, 0.5), 0 30px 60px rgba(0, 0, 0, 0.45)">
+          <div style="text-align: center; display: flex; flex-direction: column; gap: 6px">
+            <h2 id="registro-titulo" style="margin: 0; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 28px; line-height: 1.15; color: #0B5AA6">Registren su voto</h2>
+            <p style="margin: 0; font-size: 15px; line-height: 1.45; font-weight: 600; color: #2D4F78">Para enviar su voto, completen sus datos. Se permite un voto por persona.</p>
+          </div>
+          <label for="reg-nombre" style="display: flex; flex-direction: column; gap: 6px; font-weight: 700; font-size: 15px; color: #0A3566">Nombre
+            <input id="reg-nombre" name="nombre" type="text" autocomplete="given-name" maxlength="60" value="{{regNombre}}" style="min-height: 48px; padding: 0 14px; border: 2px solid #B5D3F2; border-radius: 14px; font-size: 16px; font-family: inherit; color: #0A3566">
+          </label>
+          <label for="reg-apellido" style="display: flex; flex-direction: column; gap: 6px; font-weight: 700; font-size: 15px; color: #0A3566">Apellido
+            <input id="reg-apellido" name="apellido" type="text" autocomplete="family-name" maxlength="60" value="{{regApellido}}" style="min-height: 48px; padding: 0 14px; border: 2px solid #B5D3F2; border-radius: 14px; font-size: 16px; font-family: inherit; color: #0A3566">
+          </label>
+          <label for="reg-correo" style="display: flex; flex-direction: column; gap: 6px; font-weight: 700; font-size: 15px; color: #0A3566">Correo
+            <input id="reg-correo" name="correo" type="email" autocomplete="email" maxlength="120" value="{{regCorreo}}" style="min-height: 48px; padding: 0 14px; border: 2px solid #B5D3F2; border-radius: 14px; font-size: 16px; font-family: inherit; color: #0A3566">
+          </label>
+          <sc-if value="{{regError}}" hint-placeholder-val="{{ false }}">
+            <p role="alert" style="margin: 0; padding: 10px 14px; border-radius: 12px; background: #FDECEC; color: #9B1C1C; font-weight: 700; font-size: 14px">{{regError}}</p>
+          </sc-if>
+          <p style="margin: 0; font-size: 12px; line-height: 1.4; color: #5A6E88">Sus datos se usarán solo para validar su voto en esta campaña.</p>
+          <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 4px">
+            <button type="button" onClick="{{confirmarRegistro}}" disabled="{{enviando}}" style="min-height: 52px; border-radius: 999px; border: 0; background: #0B5AA6; color: #ffffff; font-weight: 700; font-size: 18px; cursor: pointer; box-shadow: 0 8px 18px rgba(11, 90, 166, 0.35)">{{regBoton}}</button>
+            <button type="button" onClick="{{cancelarRegistro}}" style="min-height: 46px; border-radius: 999px; border: 2px solid #0B5AA6; background: #ffffff; color: #0B5AA6; font-weight: 700; font-size: 16px; cursor: pointer">Cancelar</button>
+          </div>
+        </form>
+      </div>
+    </sc-if>
+
     <sc-if value="{{showModal}}" hint-placeholder-val="{{ false }}">
       <div style="position: fixed; inset: 0; z-index: 50; background: rgba(2, 8, 30, 0.72); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 20px">
         <div role="dialog" aria-modal="true" aria-labelledby="modal-titulo" style="width: 100%; max-width: 440px; background: #ffffff; border-radius: 28px; padding: 32px 26px 26px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 14px; box-shadow: 0 0 0 4px rgba(143, 216, 255, 0.5), 0 30px 60px rgba(0, 0, 0, 0.45)">
           <span aria-hidden="true" style="font-size: 56px; line-height: 1">🎉</span>
           <h2 id="modal-titulo" style="margin: 0; font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 30px; line-height: 1.15; color: #0B5AA6">¡Gracias por su voto!</h2>
-          <p style="margin: 0; font-size: 17px; line-height: 1.45; font-weight: 600; color: #2D4F78">Su voto por {{ciudadesVotadas}} quedó guardado. ¿Quieren volver a votar?</p>
+          <p style="margin: 0; font-size: 17px; line-height: 1.45; font-weight: 600; color: #2D4F78">Su voto por {{ciudadesVotadas}} quedó registrado. ¡Gracias por participar!</p>
           <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; margin-top: 8px">
-            <button onClick="{{revotar}}" style="min-height: 52px; border-radius: 999px; border: 0; background: #0B5AA6; color: #ffffff; font-weight: 700; font-size: 18px; cursor: pointer; box-shadow: 0 8px 18px rgba(11, 90, 166, 0.35)">Sí, volver a votar</button>
-            <button onClick="{{cerrarModal}}" style="min-height: 48px; border-radius: 999px; border: 2px solid #0B5AA6; background: #ffffff; color: #0B5AA6; font-weight: 700; font-size: 16px; cursor: pointer">No, ver resultados</button>
+            <button onClick="{{cerrarModal}}" style="min-height: 52px; border-radius: 999px; border: 0; background: #0B5AA6; color: #ffffff; font-weight: 700; font-size: 18px; cursor: pointer; box-shadow: 0 8px 18px rgba(11, 90, 166, 0.35)">Ver resultados</button>
           </div>
         </div>
       </div>
@@ -423,6 +450,7 @@ class Component extends DCLogic {
   }
   conectar() {
     var self = this;
+    try { var yv = localStorage.getItem('humana-ya-voto'); if (yv) this.setState({ yaVoto: yv }); } catch (e) {}
     if (!URL_VOTOS) return;
     var cargar = function () {
       fetch(URL_VOTOS + '?accion=conteo&t=' + Date.now())
@@ -433,27 +461,36 @@ class Component extends DCLogic {
     cargar();
     this._conteo = setInterval(function () { if (!document.hidden) cargar(); }, 30000);
   }
-  enviarVoto(votes) {
+  enviarVoto(votes, reg) {
     var self = this;
     if (!URL_VOTOS || this.state.enviando) return;
     this.setState({ enviando: true, aviso: null });
-    var datos = { votante: this.idVotante(), quito: votes.quito, guayaquil: votes.guayaquil, cuenca: votes.cuenca };
+    var datos = { votante: this.idVotante(), quito: votes.quito, guayaquil: votes.guayaquil, cuenca: votes.cuenca, nombre: reg.nombre, apellido: reg.apellido, correo: reg.correo };
     fetch(URL_VOTOS, { method: 'POST', body: JSON.stringify(datos) })
       .then(function (r) { return r.json(); })
       .then(function (d) {
         if (d && d.ok) {
-          var upd = { submitted: true, enviando: false, lastPick: null, modal: true };
+          try { localStorage.setItem('humana-ya-voto', reg.correo); } catch (e) {}
+          var upd = { submitted: true, enviando: false, lastPick: null, modal: true, registro: false, regError: null, yaVoto: reg.correo };
           if (d.counts) upd.counts = d.counts;
           self.setState(upd);
+        } else if (d && d.motivo === 'ya_voto') {
+          try { localStorage.setItem('humana-ya-voto', reg.correo); } catch (e) {}
+          self.setState({ enviando: false, regError: 'Este correo ya registró un voto. Solo se permite un voto por persona.' });
+        } else if (d && d.motivo === 'registro') {
+          self.setState({ enviando: false, regError: 'Revisen su nombre, apellido y correo.' });
         } else if (d && d.motivo === 'pausada') {
-          self.setState({ enviando: false, pausada: true, aviso: 'La votación está en pausa por el momento.' });
+          self.setState({ enviando: false, registro: false, pausada: true, aviso: 'La votación está en pausa por el momento.' });
         } else if (d && d.motivo === 'cerrada') {
-          self.setState({ enviando: false, aviso: 'La votación ya cerró.' });
+          self.setState({ enviando: false, registro: false, aviso: 'La votación ya cerró.' });
         } else {
-          self.setState({ enviando: false, aviso: 'No se pudo guardar su voto. Inténtenlo de nuevo.' });
+          self.setState({ enviando: false, regError: 'No se pudo guardar su voto. Inténtenlo de nuevo.' });
         }
       })
-      .catch(function () { self.setState({ enviando: false, aviso: 'No hay conexión. Revisen su internet e inténtenlo de nuevo.' }); });
+      .catch(function () { self.setState({ enviando: false, regError: 'No hay conexión. Revisen su internet e inténtenlo de nuevo.' }); });
+  }
+  regGuardado(campo) {
+    try { var r = JSON.parse(localStorage.getItem('humana-registro') || 'null'); return (r && r[campo]) || ''; } catch (e) { return ''; }
   }
   irCiudad(paso) {
     var ids = ['quito', 'guayaquil', 'cuenca'];
@@ -645,8 +682,9 @@ class Component extends DCLogic {
         style: 'display:flex;flex-direction:column;gap:2px;min-width:110px;flex:1 1 0;padding:8px 14px;border-radius:14px;' + (pid ? 'background:#1E6FD0;' : 'background:transparent;border:1.5px dashed #6F95D6;')
       };
     });
-    var canSend = !submitted && open && missing.length === 0 && !this.state.enviando && !!URL_VOTOS;
-    var sendHint = this.state.aviso ? this.state.aviso : !URL_VOTOS ? 'Falta conectar la hoja de votos.' : this.state.enviando ? 'Enviando su voto…' : submitted ? (open ? '¿Quieren votar otra vez? Toquen el botón.' : 'Su voto fue enviado.') : (!open ? (pausada ? 'La votación está en pausa.' : 'La votación está cerrada.') : (missing.length ? 'Elijan una foto en ' + missing.map(function (c) { return c.label; }).join(', ') + ' para poder enviar.' : 'Listo: ya pueden enviar su voto.'));
+    var yaVoto = this.state.yaVoto || null;
+    var canSend = !submitted && !yaVoto && open && missing.length === 0 && !this.state.enviando && !!URL_VOTOS;
+    var sendHint = this.state.aviso ? this.state.aviso : !URL_VOTOS ? 'Falta conectar la hoja de votos.' : this.state.enviando ? 'Enviando su voto…' : submitted ? 'Su voto fue registrado. ¡Gracias!' : yaVoto ? 'Ya registraron un voto desde este dispositivo (' + yaVoto + ').' : (!open ? (pausada ? 'La votación está en pausa.' : 'La votación está cerrada.') : (missing.length ? 'Elijan una foto en ' + missing.map(function (c) { return c.label; }).join(', ') + ' para poder enviar.' : 'Listo: ya pueden enviar su voto.'));
     // Cielo nocturno: estrellas con posiciones fijas (pseudoaleatorias)
     if (!this._cielo) {
       var seed = 7;
@@ -730,19 +768,31 @@ class Component extends DCLogic {
       },
       showTop: this.props.mostrarTop3 ?? true, top: top,
       gridStyle: 'display:grid;gap:24px;grid-template-columns:repeat(' + (city === 'quito' ? 3 : 4) + ', minmax(0, 1fr));',
-      submitted: submitted, resumen: resumen, cantSend: !(canSend || (submitted && open)),
-      sendLabel: submitted ? (open ? 'Votar otra vez' : '✓ Voto enviado') : 'Enviar voto',
+      submitted: submitted, resumen: resumen, cantSend: !canSend,
+      sendLabel: (submitted || yaVoto) ? '✓ Voto enviado' : 'Enviar voto',
       sendHint: sendHint,
-      sendStyle: 'min-height:52px;padding:0 32px;border-radius:999px;border:0;font-weight:700;font-size:18px;' + (canSend || (submitted && open) ? 'background:#ffffff;color:#0A2463;cursor:pointer;box-shadow:0 0 0 4px rgba(120,190,255,.35);' : (submitted ? 'background:#1E6FD0;color:#ffffff;cursor:default;' : 'background:#3A5488;color:#B9C8E4;cursor:not-allowed;')),
+      sendStyle: 'min-height:52px;padding:0 32px;border-radius:999px;border:0;font-weight:700;font-size:18px;' + (canSend ? 'background:#ffffff;color:#0A2463;cursor:pointer;box-shadow:0 0 0 4px rgba(120,190,255,.35);' : ((submitted || yaVoto) ? 'background:#1E6FD0;color:#ffffff;cursor:default;' : 'background:#3A5488;color:#B9C8E4;cursor:not-allowed;')),
       send: function () {
-        if (Date.now() >= closeAt) return;
-        if (self.state.submitted) {
-          // Empezar un voto nuevo
-          self.setState({ votes: { quito: null, guayaquil: null, cuenca: null }, submitted: false, lastPick: null, aviso: null, city: 'quito' });
-          return;
-        }
-        if (!canSend) return;
-        self.enviarVoto(votes);
+        if (Date.now() >= closeAt || !canSend) return;
+        self.setState({ registro: true, regError: null });
+      },
+      showRegistro: !!this.state.registro && !submitted,
+      regNombre: this.regGuardado('nombre'), regApellido: this.regGuardado('apellido'), regCorreo: this.regGuardado('correo'),
+      regError: this.state.regError || '',
+      enviando: !!this.state.enviando,
+      regBoton: this.state.enviando ? 'Enviando…' : 'Enviar mi voto',
+      noEnviarForm: function (e) { if (e && e.preventDefault) e.preventDefault(); },
+      cancelarRegistro: function () { self.setState({ registro: false, regError: null }); },
+      confirmarRegistro: function () {
+        if (self.state.enviando) return;
+        var val = function (id) { var el = document.getElementById(id); return el ? String(el.value || '').replace(/\s+/g, ' ').trim() : ''; };
+        var reg = { nombre: val('reg-nombre'), apellido: val('reg-apellido'), correo: val('reg-correo').toLowerCase() };
+        if (reg.nombre.length < 2) return self.setState({ regError: 'Escriban su nombre.' });
+        if (reg.apellido.length < 2) return self.setState({ regError: 'Escriban su apellido.' });
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(reg.correo)) return self.setState({ regError: 'Escriban un correo válido, por ejemplo nombre@empresa.com.' });
+        try { localStorage.setItem('humana-registro', JSON.stringify(reg)); } catch (e) {}
+        self.setState({ regError: null });
+        self.enviarVoto(votes, reg);
       }
     };
   }
