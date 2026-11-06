@@ -81,7 +81,11 @@ const celda = (v) => '"' + String(v).replace(/"/g, '""') + '"';
 
 async function exportar(url, env) {
   const clave = url.searchParams.get('clave') || '';
-  if (!env.CLAVE_ADMIN || clave !== env.CLAVE_ADMIN) return new Response('Clave incorrecta', { status: 401 });
+  // La clave puede estar como secreto CLAVE_ADMIN o guardada en la tabla "ajustes" (clave = 'clave_admin')
+  let validas = [];
+  if (typeof env.CLAVE_ADMIN === 'string') validas.push(env.CLAVE_ADMIN);
+  try { const r = await env.DB.prepare("SELECT valor FROM ajustes WHERE clave = 'clave_admin'").first(); if (r && r.valor) validas.push(String(r.valor)); } catch (e) {}
+  if (!clave || validas.indexOf(clave) < 0) return new Response('Clave incorrecta', { status: 401 });
   let antes = [];
   try { ({ results: antes } = await env.DB.prepare("SELECT datetime(creado, '-5 hours') AS creado, votante, quito, guayaquil, cuenca FROM votos_publico ORDER BY id").all()); } catch (e) { antes = []; }
   const { results: ahora } = await env.DB.prepare(
