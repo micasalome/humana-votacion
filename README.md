@@ -12,10 +12,13 @@ Los votos se guardan en una base de datos **Cloudflare D1**. No se necesita inic
 
 ## Configuración en Cloudflare
 1. Workers & Pages › tu proyecto `humana-votacion` › Deployments › el despliegue se hace solo al subir cambios a GitHub.
-2. **Clave para descargar votos:** Settings › Variables and Secrets › Add › tipo *Secret* › Name `CLAVE_ADMIN` › Value: una clave que solo tú conozcas › Deploy.
+2. **Clave para descargar votos (una sola vez):** Storage & databases › D1 SQL Database › `votos-humana` › Console, pega y ejecuta:
+   ```sql
+   INSERT OR REPLACE INTO ajustes (clave, valor) VALUES ('clave_admin', 'TU_CLAVE');
+   ```
 
 ## Descargar los votos en Excel
-Abre `https://TU-ENLACE/api/exportar?clave=TU_CLAVE` → se descarga `votos-humana.csv`.
+Abre `https://humana-votacion.pasante-marketing.workers.dev/api/exportar?clave=TU_CLAVE` → se descarga `votos-humana.csv` (se abre en Excel).
 
 ## Cierre
 Deja de aceptar votos el **miércoles 11 de noviembre de 2026 a las 5:00 p. m. (Ecuador)**.
