@@ -26,6 +26,6 @@ Deja de aceptar votos el **miércoles 11 de noviembre de 2026 a las 5:00 p. m. (
 ## Filtros para aceptar solo votos reales (sin registro)
 - El voto debe enviarse desde la propia página, en un navegador, con una ficha firmada que la página recibe al abrirse (de un solo uso; mínimo 3 s abierta).
 - Debe elegir una foto existente en cada una de las 3 ciudades y tener un identificador de dispositivo válido.
-- Un voto por dispositivo (los dispositivos que ya votaron antes no pueden repetir).
-- Por conexión a internet: 1 voto cada 8 s, máx. 40 por hora y 200 por día (`LIMITES` en `src/worker.js`).
+- Se puede votar varias veces; cada voto necesita una ficha nueva.
+- Por conexión a internet: 1 voto cada 8 s, máx. 60 por hora y 300 por día (`LIMITES` en `src/worker.js`).
 - El Excel incluye la columna "Conexión (cifrada)" para revisar votos de una misma conexión.

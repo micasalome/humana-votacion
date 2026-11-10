@@ -157,7 +157,7 @@ async function conteo(db) {
 
 // ---------- Filtros para aceptar solo votos reales ----------
 // Límites por conexión (IP cifrada). Son holgados para oficinas que comparten internet.
-const LIMITES = { seg: 8, hora: 40, dia: 200 };
+const LIMITES = { seg: 8, hora: 60, dia: 300 };
 const FICHA_MIN_SEG = 3;            // la página debe estar abierta al menos 3 s antes de votar
 const FICHA_MAX_SEG = 12 * 3600;    // una ficha vale 12 horas
 const DESDE = Date.parse('2026-10-01T00:00:00Z');
@@ -214,8 +214,7 @@ async function votar(request, db) {
   if (!valido) return json({ ok: false, motivo: 'datos' }, 400);
   // 3) Ficha firmada que entrega la página al abrirse (de un solo uso)
   if (!(await fichaValida(db, d.ficha))) return json({ ok: false, motivo: 'robot' }, 403);
-  // 4) Un voto por dispositivo
-  if (await db.prepare('SELECT 1 FROM dispositivos WHERE votante = ?').bind(d.votante).first()) return json({ ok: false, motivo: 'ya_voto' });
+  // 4) Se permite votar varias veces (cada voto necesita una ficha nueva)
   // 5) Límite de velocidad por conexión
   const ip = request.headers.get('CF-Connecting-IP') || '';
   const conexion = ip ? (await hmac(await obtenerSecreto(db), 'ip:' + ip)).slice(0, 16) : '';
@@ -228,12 +227,11 @@ async function votar(request, db) {
   try {
     await db.batch([
       db.prepare('INSERT INTO fichas (ficha) VALUES (?)').bind(d.ficha),
-      db.prepare('INSERT INTO dispositivos (votante) VALUES (?)').bind(d.votante),
       db.prepare('INSERT INTO votos_campana (votante, quito, guayaquil, cuenca, conexion, navegador) VALUES (?, ?, ?, ?, ?, ?)').bind(d.votante, d.quito, d.guayaquil, d.cuenca, conexion, navegador),
       ...CIUDADES.map((k) => db.prepare('INSERT INTO resumen (ciudad, foto, n) VALUES (?, ?, 1) ON CONFLICT (ciudad, foto) DO UPDATE SET n = n + 1').bind(k, d[k]))
     ]);
   } catch (e) {
-    if (/UNIQUE|constraint/i.test(String(e && e.message || e))) return json({ ok: false, motivo: 'ya_voto' });
+    if (/UNIQUE|constraint/i.test(String(e && e.message || e))) return json({ ok: false, motivo: 'robot' }, 403); // ficha ya usada
     throw e;
   }
   return json({ ok: true, counts: await conteo(db) });
