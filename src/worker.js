@@ -26,22 +26,13 @@ async function prepararTabla(db) {
     try { await db.prepare(`ALTER TABLE votos_campana ADD COLUMN ${col} TEXT NOT NULL DEFAULT ''`).run(); } catch (e) { /* ya existe */ }
   }
   await db.prepare("CREATE TABLE IF NOT EXISTS registros (correo TEXT PRIMARY KEY, nombre TEXT NOT NULL, apellido TEXT NOT NULL, creado TEXT NOT NULL DEFAULT (datetime('now')))").run();
-  // Filtros anti-robots: conexión cifrada y navegador de cada voto, un voto por dispositivo y fichas de un solo uso
+  // Filtros anti-robots: conexión cifrada y navegador de cada voto y fichas de un solo uso.
+  // Cada paso va protegido: si alguno falla, el conteo y la votación siguen funcionando.
   for (const col of ['conexion', 'navegador']) {
     try { await db.prepare(`ALTER TABLE votos_campana ADD COLUMN ${col} TEXT NOT NULL DEFAULT ''`).run(); } catch (e) { /* ya existe */ }
   }
-  await db.prepare('CREATE INDEX IF NOT EXISTS idx_votos_conexion ON votos_campana (conexion, creado)').run();
-  await db.prepare("CREATE TABLE IF NOT EXISTS dispositivos (votante TEXT PRIMARY KEY, creado TEXT NOT NULL DEFAULT (datetime('now')))").run();
-  await db.prepare("CREATE TABLE IF NOT EXISTS fichas (ficha TEXT PRIMARY KEY, creado TEXT NOT NULL DEFAULT (datetime('now')))").run();
-  await db.prepare('CREATE TABLE IF NOT EXISTS ajustes (clave TEXT PRIMARY KEY, valor TEXT)').run();
-  const marca = await db.prepare("SELECT valor FROM ajustes WHERE clave = 'dispositivos_v1'").first();
-  if (!marca) {
-    // Una sola vez: los dispositivos que ya votaron no pueden volver a votar
-    const lote = [db.prepare('INSERT OR IGNORE INTO dispositivos (votante) SELECT DISTINCT votante FROM votos_campana')];
-    try { await db.prepare('SELECT 1 FROM votos_publico LIMIT 1').all(); lote.push(db.prepare('INSERT OR IGNORE INTO dispositivos (votante) SELECT DISTINCT votante FROM votos_publico')); } catch (e) {}
-    lote.push(db.prepare("INSERT OR REPLACE INTO ajustes (clave, valor) VALUES ('dispositivos_v1', datetime('now'))"));
-    await db.batch(lote);
-  }
+  try { await db.prepare("CREATE TABLE IF NOT EXISTS fichas (ficha TEXT PRIMARY KEY, creado TEXT NOT NULL DEFAULT (datetime('now')))").run(); } catch (e) {}
+  try { await db.prepare('CREATE TABLE IF NOT EXISTS ajustes (clave TEXT PRIMARY KEY, valor TEXT)').run(); } catch (e) {}
   tablaLista = true;
 }
 
@@ -166,11 +157,13 @@ const hex = (buf) => [...new Uint8Array(buf)].map((b) => b.toString(16).padStart
 let secreto = null;
 async function obtenerSecreto(db) {
   if (secreto) return secreto;
-  const nuevo = hex(crypto.getRandomValues(new Uint8Array(32)));
-  await db.prepare("INSERT OR IGNORE INTO ajustes (clave, valor) VALUES ('firma_secreta', ?)").bind(nuevo).run();
-  const r = await db.prepare("SELECT valor FROM ajustes WHERE clave = 'firma_secreta'").first();
-  secreto = String(r.valor);
-  return secreto;
+  try {
+    const nuevo = hex(crypto.getRandomValues(new Uint8Array(32)));
+    await db.prepare("INSERT OR IGNORE INTO ajustes (clave, valor) VALUES ('firma_secreta', ?)").bind(nuevo).run();
+    const r = await db.prepare("SELECT valor FROM ajustes WHERE clave = 'firma_secreta'").first();
+    if (r && r.valor) secreto = String(r.valor);
+  } catch (e) {}
+  return secreto || 'humana-para-humanos-2026';
 }
 async function hmac(clave, texto) {
   const k = await crypto.subtle.importKey('raw', new TextEncoder().encode(clave), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
@@ -218,21 +211,26 @@ async function votar(request, db) {
   // 5) Límite de velocidad por conexión
   const ip = request.headers.get('CF-Connecting-IP') || '';
   const conexion = ip ? (await hmac(await obtenerSecreto(db), 'ip:' + ip)).slice(0, 16) : '';
-  if (conexion) {
+  if (conexion) try {
     const r = await db.prepare(
       "SELECT SUM(creado > datetime('now', ?)) AS s, SUM(creado > datetime('now', '-1 hour')) AS h, COUNT(*) AS d FROM votos_campana WHERE conexion = ? AND creado > datetime('now', '-1 day')"
     ).bind('-' + LIMITES.seg + ' seconds', conexion).first();
     if ((r && r.s) > 0 || (r && r.h) >= LIMITES.hora || (r && r.d) >= LIMITES.dia) return json({ ok: false, motivo: 'limite' }, 429);
-  }
+  } catch (e) { /* si la revisión falla, no se bloquea el voto */ }
+  const sumar = () => CIUDADES.map((k) => db.prepare('INSERT INTO resumen (ciudad, foto, n) VALUES (?, ?, 1) ON CONFLICT (ciudad, foto) DO UPDATE SET n = n + 1').bind(k, d[k]));
   try {
     await db.batch([
       db.prepare('INSERT INTO fichas (ficha) VALUES (?)').bind(d.ficha),
       db.prepare('INSERT INTO votos_campana (votante, quito, guayaquil, cuenca, conexion, navegador) VALUES (?, ?, ?, ?, ?, ?)').bind(d.votante, d.quito, d.guayaquil, d.cuenca, conexion, navegador),
-      ...CIUDADES.map((k) => db.prepare('INSERT INTO resumen (ciudad, foto, n) VALUES (?, ?, 1) ON CONFLICT (ciudad, foto) DO UPDATE SET n = n + 1').bind(k, d[k]))
+      ...sumar()
     ]);
   } catch (e) {
     if (/UNIQUE|constraint/i.test(String(e && e.message || e))) return json({ ok: false, motivo: 'robot' }, 403); // ficha ya usada
-    throw e;
+    // Respaldo: si las tablas nuevas fallan, el voto se guarda igual que antes
+    await db.batch([
+      db.prepare('INSERT INTO votos_campana (votante, quito, guayaquil, cuenca) VALUES (?, ?, ?, ?)').bind(d.votante, d.quito, d.guayaquil, d.cuenca),
+      ...sumar()
+    ]);
   }
   return json({ ok: true, counts: await conteo(db) });
 }
@@ -278,13 +276,15 @@ export default {
     const url = new URL(request.url);
     if (url.pathname === '/api/votos' || url.pathname === '/api/exportar') {
       try {
-        await prepararTabla(env.DB);
+        try { await prepararTabla(env.DB); } catch (e) { console.log('prepararTabla', e && e.message); }
         await prepararResumen(env.DB);
         await aplicarLimpieza(env.DB);
         await aplicarLimpieza2(env.DB);
         if (url.pathname === '/api/exportar') return await exportar(url, env);
         if (request.method === 'POST') return await votar(request, env.DB);
-        return json({ ok: true, pausada: PAUSADA, ficha: await crearFicha(env.DB), counts: await conteo(env.DB) });
+        let ficha = '';
+        try { ficha = await crearFicha(env.DB); } catch (e) {}
+        return json({ ok: true, pausada: PAUSADA, ficha, counts: await conteo(env.DB) });
       } catch (e) {
         return json({ ok: false, motivo: 'servidor', detalle: String(e && e.message || e).slice(0, 300) }, 500);
       }
