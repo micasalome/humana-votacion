@@ -110,7 +110,7 @@ button{font-family:inherit}
             </div>
           </sc-if>
         </div>
-        <p style="margin: -10px 0 0; max-width: 560px; font-size: 13px; line-height: 1.4; font-style: italic; font-weight: 500; color: #BFD8F5">Deben votar obligatoriamente por una fotografía de cada una de las tres ciudades y registrarse con su nombre, apellido y correo. Un voto por persona.</p>
+        <p style="margin: -10px 0 0; max-width: 560px; font-size: 13px; line-height: 1.4; font-style: italic; font-weight: 500; color: #BFD8F5">Deben votar obligatoriamente por una fotografía de cada una de las tres ciudades. Un voto por persona.</p>
       </div>
 
       <div class="hero-robot" style="position: absolute; z-index: 4; left: 0; top: 30px; width: 320px">
@@ -126,7 +126,7 @@ button{font-family:inherit}
     <section class="panel" aria-labelledby="titulo-votacion" style="position: relative; z-index: 3; background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(12px); border: 1.5px solid rgba(255, 255, 255, 0.9); border-radius: 36px; padding: 40px; display: flex; flex-direction: column; gap: 28px; box-shadow: 0 24px 60px rgba(6, 47, 99, 0.18)">
       <div style="display: flex; flex-direction: column; gap: 8px; text-align: center; align-items: center">
         <h2 class="panel-titulo" id="titulo-votacion" style="margin: 0; font-family: 'Fredoka', 'Baloo 2', sans-serif; font-weight: 700; font-size: 42px; line-height: 1.1; color: #0B5AA6">¡Las mejores fotos necesitan sus votos! 🤖</h2>
-        <p style="margin: 0; max-width: 620px; font-size: 18px; line-height: 1.45; font-weight: 600; color: #2D4F78">Exploren las fotos de cada ciudad, elijan sus favoritas y registren su voto. Un voto por persona.</p>
+        <p style="margin: 0; max-width: 620px; font-size: 18px; line-height: 1.45; font-weight: 600; color: #2D4F78">Exploren las fotos de cada ciudad, elijan sus favoritas y envíen su voto. Un voto por persona.</p>
       </div>
 
       <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px 24px; padding-bottom: 20px; border-bottom: 1.5px solid #DCEAF8">
@@ -455,39 +455,54 @@ class Component extends DCLogic {
     var cargar = function () {
       fetch(URL_VOTOS + '?accion=conteo&t=' + Date.now())
         .then(function (r) { return r.json(); })
-        .then(function (d) { if (d && d.counts) self.setState({ counts: d.counts, pausada: !!d.pausada }); })
+        .then(function (d) {
+          if (d && d.ficha && (!self._ficha || Date.now() - self._fichaT > 6 * 3600000)) { self._ficha = d.ficha; self._fichaT = Date.now(); }
+          if (d && d.counts) self.setState({ counts: d.counts, pausada: !!d.pausada });
+        })
         .catch(function () {});
     };
     cargar();
     this._conteo = setInterval(function () { if (!document.hidden) cargar(); }, 30000);
   }
-  enviarVoto(votes, reg) {
+  enviarVoto(votes) {
     var self = this;
     if (!URL_VOTOS || this.state.enviando) return;
     this.setState({ enviando: true, aviso: null });
-    var datos = { votante: this.idVotante(), quito: votes.quito, guayaquil: votes.guayaquil, cuenca: votes.cuenca, nombre: reg.nombre, apellido: reg.apellido, correo: reg.correo };
-    fetch(URL_VOTOS, { method: 'POST', body: JSON.stringify(datos) })
+    var marcar = function () { try { localStorage.setItem('humana-ya-voto', '1'); } catch (e) {} };
+    // La ficha de la página debe tener unos segundos; si aún no llega, se pide y se espera un poco
+    var lista = self._ficha ? Promise.resolve() : fetch(URL_VOTOS + '?accion=conteo&t=' + Date.now()).then(function (r) { return r.json(); })
+      .then(function (d) { if (d && d.ficha) { self._ficha = d.ficha; self._fichaT = Date.now(); } });
+    lista.then(function () {
+      var espera = Math.max(0, 3500 - (Date.now() - (self._fichaT || 0)));
+      return new Promise(function (ok) { setTimeout(ok, espera); });
+    }).then(function () {
+      var datos = { votante: self.idVotante(), quito: votes.quito, guayaquil: votes.guayaquil, cuenca: votes.cuenca, ficha: self._ficha || '' };
+      return fetch(URL_VOTOS, { method: 'POST', body: JSON.stringify(datos) });
+    })
       .then(function (r) { return r.json(); })
       .then(function (d) {
         if (d && d.ok) {
-          try { localStorage.setItem('humana-ya-voto', reg.correo); } catch (e) {}
-          var upd = { submitted: true, enviando: false, lastPick: null, modal: true, registro: false, regError: null, yaVoto: reg.correo };
+          marcar(); self._ficha = null;
+          var upd = { submitted: true, enviando: false, lastPick: null, modal: true, yaVoto: '1' };
           if (d.counts) upd.counts = d.counts;
           self.setState(upd);
         } else if (d && d.motivo === 'ya_voto') {
-          try { localStorage.setItem('humana-ya-voto', reg.correo); } catch (e) {}
-          self.setState({ enviando: false, regError: 'Este correo ya registró un voto. Solo se permite un voto por persona.' });
-        } else if (d && d.motivo === 'registro') {
-          self.setState({ enviando: false, regError: 'Revisen su nombre, apellido y correo.' });
+          marcar();
+          self.setState({ enviando: false, yaVoto: '1', aviso: 'Ya se registró un voto desde este dispositivo. Solo se permite un voto por persona.' });
+        } else if (d && d.motivo === 'limite') {
+          self.setState({ enviando: false, aviso: 'Se están enviando muchos votos desde esta conexión. Esperen un momento e inténtenlo de nuevo.' });
+        } else if (d && d.motivo === 'robot') {
+          self._ficha = null;
+          self.setState({ enviando: false, aviso: 'No pudimos verificar su voto. Recarguen la página y vuelvan a intentarlo.' });
         } else if (d && d.motivo === 'pausada') {
-          self.setState({ enviando: false, registro: false, pausada: true, aviso: 'La votación está en pausa por el momento.' });
+          self.setState({ enviando: false, pausada: true, aviso: 'La votación está en pausa por el momento.' });
         } else if (d && d.motivo === 'cerrada') {
-          self.setState({ enviando: false, registro: false, aviso: 'La votación ya cerró.' });
+          self.setState({ enviando: false, aviso: 'La votación ya cerró.' });
         } else {
-          self.setState({ enviando: false, regError: 'No se pudo guardar su voto. Inténtenlo de nuevo.' });
+          self.setState({ enviando: false, aviso: 'No se pudo guardar su voto. Inténtenlo de nuevo.' });
         }
       })
-      .catch(function () { self.setState({ enviando: false, regError: 'No hay conexión. Revisen su internet e inténtenlo de nuevo.' }); });
+      .catch(function () { self.setState({ enviando: false, aviso: 'No hay conexión. Revisen su internet e inténtenlo de nuevo.' }); });
   }
   regGuardado(campo) {
     try { var r = JSON.parse(localStorage.getItem('humana-registro') || 'null'); return (r && r[campo]) || ''; } catch (e) { return ''; }
@@ -684,7 +699,7 @@ class Component extends DCLogic {
     });
     var yaVoto = this.state.yaVoto || null;
     var canSend = !submitted && !yaVoto && open && missing.length === 0 && !this.state.enviando && !!URL_VOTOS;
-    var sendHint = this.state.aviso ? this.state.aviso : !URL_VOTOS ? 'Falta conectar la hoja de votos.' : this.state.enviando ? 'Enviando su voto…' : submitted ? 'Su voto fue registrado. ¡Gracias!' : yaVoto ? 'Ya registraron un voto desde este dispositivo (' + yaVoto + ').' : (!open ? (pausada ? 'La votación está en pausa.' : 'La votación está cerrada.') : (missing.length ? 'Elijan una foto en ' + missing.map(function (c) { return c.label; }).join(', ') + ' para poder enviar.' : 'Listo: ya pueden enviar su voto.'));
+    var sendHint = this.state.aviso ? this.state.aviso : !URL_VOTOS ? 'Falta conectar la hoja de votos.' : this.state.enviando ? 'Enviando su voto…' : submitted ? 'Su voto fue registrado. ¡Gracias!' : yaVoto ? 'Ya registraron un voto desde este dispositivo. ¡Gracias!' : (!open ? (pausada ? 'La votación está en pausa.' : 'La votación está cerrada.') : (missing.length ? 'Elijan una foto en ' + missing.map(function (c) { return c.label; }).join(', ') + ' para poder enviar.' : 'Listo: ya pueden enviar su voto.'));
     // Cielo nocturno: estrellas con posiciones fijas (pseudoaleatorias)
     if (!this._cielo) {
       var seed = 7;
@@ -774,7 +789,7 @@ class Component extends DCLogic {
       sendStyle: 'min-height:52px;padding:0 32px;border-radius:999px;border:0;font-weight:700;font-size:18px;' + (canSend ? 'background:#ffffff;color:#0A2463;cursor:pointer;box-shadow:0 0 0 4px rgba(120,190,255,.35);' : ((submitted || yaVoto) ? 'background:#1E6FD0;color:#ffffff;cursor:default;' : 'background:#3A5488;color:#B9C8E4;cursor:not-allowed;')),
       send: function () {
         if (Date.now() >= closeAt || !canSend) return;
-        self.setState({ registro: true, regError: null });
+        self.enviarVoto(votes);
       },
       showRegistro: !!this.state.registro && !submitted,
       regNombre: this.regGuardado('nombre'), regApellido: this.regGuardado('apellido'), regCorreo: this.regGuardado('correo'),
@@ -792,7 +807,7 @@ class Component extends DCLogic {
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(reg.correo)) return self.setState({ regError: 'Escriban un correo válido, por ejemplo nombre@empresa.com.' });
         try { localStorage.setItem('humana-registro', JSON.stringify(reg)); } catch (e) {}
         self.setState({ regError: null });
-        self.enviarVoto(votes, reg);
+        self.enviarVoto(votes);
       }
     };
   }

@@ -9,7 +9,7 @@ import { LIMPIEZA_2 } from './limpieza2.js';
 const CIERRE = Date.parse('2026-11-11T17:00:00-05:00'); // miércoles 11 nov, 5:00 p. m. (Ecuador)
 const CIUDADES = ['quito', 'guayaquil', 'cuenca'];
 // Votación en pausa: no se aceptan votos nuevos (los votos guardados y los resultados se mantienen). Cambiar a false para reabrir.
-const PAUSADA = true;
+const PAUSADA = false;
 let tablaLista = false;
 
 const json = (o, status = 200) =>
@@ -26,6 +26,22 @@ async function prepararTabla(db) {
     try { await db.prepare(`ALTER TABLE votos_campana ADD COLUMN ${col} TEXT NOT NULL DEFAULT ''`).run(); } catch (e) { /* ya existe */ }
   }
   await db.prepare("CREATE TABLE IF NOT EXISTS registros (correo TEXT PRIMARY KEY, nombre TEXT NOT NULL, apellido TEXT NOT NULL, creado TEXT NOT NULL DEFAULT (datetime('now')))").run();
+  // Filtros anti-robots: conexión cifrada y navegador de cada voto, un voto por dispositivo y fichas de un solo uso
+  for (const col of ['conexion', 'navegador']) {
+    try { await db.prepare(`ALTER TABLE votos_campana ADD COLUMN ${col} TEXT NOT NULL DEFAULT ''`).run(); } catch (e) { /* ya existe */ }
+  }
+  await db.prepare('CREATE INDEX IF NOT EXISTS idx_votos_conexion ON votos_campana (conexion, creado)').run();
+  await db.prepare("CREATE TABLE IF NOT EXISTS dispositivos (votante TEXT PRIMARY KEY, creado TEXT NOT NULL DEFAULT (datetime('now')))").run();
+  await db.prepare("CREATE TABLE IF NOT EXISTS fichas (ficha TEXT PRIMARY KEY, creado TEXT NOT NULL DEFAULT (datetime('now')))").run();
+  await db.prepare('CREATE TABLE IF NOT EXISTS ajustes (clave TEXT PRIMARY KEY, valor TEXT)').run();
+  const marca = await db.prepare("SELECT valor FROM ajustes WHERE clave = 'dispositivos_v1'").first();
+  if (!marca) {
+    // Una sola vez: los dispositivos que ya votaron no pueden volver a votar
+    const lote = [db.prepare('INSERT OR IGNORE INTO dispositivos (votante) SELECT DISTINCT votante FROM votos_campana')];
+    try { await db.prepare('SELECT 1 FROM votos_publico LIMIT 1').all(); lote.push(db.prepare('INSERT OR IGNORE INTO dispositivos (votante) SELECT DISTINCT votante FROM votos_publico')); } catch (e) {}
+    lote.push(db.prepare("INSERT OR REPLACE INTO ajustes (clave, valor) VALUES ('dispositivos_v1', datetime('now'))"));
+    await db.batch(lote);
+  }
   tablaLista = true;
 }
 
@@ -139,26 +155,81 @@ async function conteo(db) {
   return c;
 }
 
+// ---------- Filtros para aceptar solo votos reales ----------
+// Límites por conexión (IP cifrada). Son holgados para oficinas que comparten internet.
+const LIMITES = { seg: 8, hora: 40, dia: 200 };
+const FICHA_MIN_SEG = 3;            // la página debe estar abierta al menos 3 s antes de votar
+const FICHA_MAX_SEG = 12 * 3600;    // una ficha vale 12 horas
+const DESDE = Date.parse('2026-10-01T00:00:00Z');
+
+const hex = (buf) => [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+let secreto = null;
+async function obtenerSecreto(db) {
+  if (secreto) return secreto;
+  const nuevo = hex(crypto.getRandomValues(new Uint8Array(32)));
+  await db.prepare("INSERT OR IGNORE INTO ajustes (clave, valor) VALUES ('firma_secreta', ?)").bind(nuevo).run();
+  const r = await db.prepare("SELECT valor FROM ajustes WHERE clave = 'firma_secreta'").first();
+  secreto = String(r.valor);
+  return secreto;
+}
+async function hmac(clave, texto) {
+  const k = await crypto.subtle.importKey('raw', new TextEncoder().encode(clave), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  return hex(await crypto.subtle.sign('HMAC', k, new TextEncoder().encode(texto)));
+}
+async function crearFicha(db) {
+  const base = Date.now().toString(36) + '.' + hex(crypto.getRandomValues(new Uint8Array(8)));
+  return base + '.' + (await hmac(await obtenerSecreto(db), 'ficha:' + base)).slice(0, 32);
+}
+async function fichaValida(db, ficha) {
+  const m = /^([a-z0-9]{6,12})\.([0-9a-f]{16})\.([0-9a-f]{32})$/.exec(String(ficha || ''));
+  if (!m) return false;
+  const firma = (await hmac(await obtenerSecreto(db), 'ficha:' + m[1] + '.' + m[2])).slice(0, 32);
+  if (firma !== m[3]) return false;
+  const edad = (Date.now() - parseInt(m[1], 36)) / 1000;
+  return edad >= FICHA_MIN_SEG && edad <= FICHA_MAX_SEG;
+}
+function idCoherente(id) {
+  const m = /^v-([a-z0-9]{6,10})-([a-z0-9]{4,10})$/.exec(String(id || ''));
+  if (!m) return false;
+  const t = parseInt(m[1], 36);
+  return t >= DESDE && t <= Date.now() + 86400000;
+}
+
 async function votar(request, db) {
   if (PAUSADA) return json({ ok: false, motivo: 'pausada' });
   if (Date.now() >= CIERRE) return json({ ok: false, motivo: 'cerrada' });
+  // 1) Debe venir desde la propia página, en un navegador
+  const url = new URL(request.url);
+  const origen = request.headers.get('Origin') || '';
+  const sitio = request.headers.get('Sec-Fetch-Site');
+  const navegador = (request.headers.get('User-Agent') || '').slice(0, 200);
+  if (origen !== url.origin || (sitio && sitio !== 'same-origin') || !/^Mozilla\/5\.0 /.test(navegador)) {
+    return json({ ok: false, motivo: 'robot' }, 403);
+  }
   let d;
   try { d = JSON.parse(await request.text()); } catch (e) { return json({ ok: false, motivo: 'datos' }, 400); }
-  const valido = /^v-[a-z0-9-]{4,40}$/.test(d.votante || '') &&
-    CIUDADES.every((k) => new RegExp('^' + k + '-\\d{1,3}$').test(d[k] || '')); // obligatorio: una foto por cada ciudad
+  // 2) Datos coherentes: una foto existente por cada ciudad y un identificador de dispositivo bien formado
+  const valido = idCoherente(d.votante) &&
+    CIUDADES.every((k) => { const m = new RegExp('^' + k + '-(\\d{1,3})$').exec(d[k] || ''); return m && +m[1] < NOMBRES[k].length; });
   if (!valido) return json({ ok: false, motivo: 'datos' }, 400);
-  const limpio = (s) => String(s || '').replace(/\s+/g, ' ').trim();
-  const nombre = limpio(d.nombre), apellido = limpio(d.apellido), correo = limpio(d.correo).toLowerCase();
-  if (nombre.length < 2 || nombre.length > 60 || apellido.length < 2 || apellido.length > 60 ||
-      correo.length > 120 || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(correo)) {
-    return json({ ok: false, motivo: 'registro' }, 400);
+  // 3) Ficha firmada que entrega la página al abrirse (de un solo uso)
+  if (!(await fichaValida(db, d.ficha))) return json({ ok: false, motivo: 'robot' }, 403);
+  // 4) Un voto por dispositivo
+  if (await db.prepare('SELECT 1 FROM dispositivos WHERE votante = ?').bind(d.votante).first()) return json({ ok: false, motivo: 'ya_voto' });
+  // 5) Límite de velocidad por conexión
+  const ip = request.headers.get('CF-Connecting-IP') || '';
+  const conexion = ip ? (await hmac(await obtenerSecreto(db), 'ip:' + ip)).slice(0, 16) : '';
+  if (conexion) {
+    const r = await db.prepare(
+      "SELECT SUM(creado > datetime('now', ?)) AS s, SUM(creado > datetime('now', '-1 hour')) AS h, COUNT(*) AS d FROM votos_campana WHERE conexion = ? AND creado > datetime('now', '-1 day')"
+    ).bind('-' + LIMITES.seg + ' seconds', conexion).first();
+    if ((r && r.s) > 0 || (r && r.h) >= LIMITES.hora || (r && r.d) >= LIMITES.dia) return json({ ok: false, motivo: 'limite' }, 429);
   }
-  const ya = await db.prepare('SELECT 1 FROM registros WHERE correo = ?').bind(correo).first();
-  if (ya) return json({ ok: false, motivo: 'ya_voto' });
   try {
     await db.batch([
-      db.prepare('INSERT INTO registros (correo, nombre, apellido) VALUES (?, ?, ?)').bind(correo, nombre, apellido),
-      db.prepare('INSERT INTO votos_campana (votante, quito, guayaquil, cuenca, nombre, apellido, correo) VALUES (?, ?, ?, ?, ?, ?, ?)').bind(d.votante, d.quito, d.guayaquil, d.cuenca, nombre, apellido, correo),
+      db.prepare('INSERT INTO fichas (ficha) VALUES (?)').bind(d.ficha),
+      db.prepare('INSERT INTO dispositivos (votante) VALUES (?)').bind(d.votante),
+      db.prepare('INSERT INTO votos_campana (votante, quito, guayaquil, cuenca, conexion, navegador) VALUES (?, ?, ?, ?, ?, ?)').bind(d.votante, d.quito, d.guayaquil, d.cuenca, conexion, navegador),
       ...CIUDADES.map((k) => db.prepare('INSERT INTO resumen (ciudad, foto, n) VALUES (?, ?, 1) ON CONFLICT (ciudad, foto) DO UPDATE SET n = n + 1').bind(k, d[k]))
     ]);
   } catch (e) {
@@ -191,13 +262,13 @@ async function exportar(url, env) {
   try { const r = await env.DB.prepare("SELECT valor FROM ajustes WHERE clave = 'clave_admin'").first(); if (r && r.valor) validas.push(String(r.valor)); } catch (e) {}
   if (!clave || validas.indexOf(clave) < 0) return new Response('Clave incorrecta', { status: 401 });
   let antes = [];
-  try { ({ results: antes } = await env.DB.prepare("SELECT datetime(creado, '-5 hours') AS creado, votante, quito, guayaquil, cuenca, '' AS nombre, '' AS apellido, '' AS correo FROM votos_publico ORDER BY id").all()); } catch (e) { antes = []; }
+  try { ({ results: antes } = await env.DB.prepare("SELECT datetime(creado, '-5 hours') AS creado, votante, quito, guayaquil, cuenca, '' AS nombre, '' AS apellido, '' AS correo, '' AS conexion FROM votos_publico ORDER BY id").all()); } catch (e) { antes = []; }
   const { results: ahora } = await env.DB.prepare(
-    "SELECT datetime(creado, '-5 hours') AS creado, votante, quito, guayaquil, cuenca, nombre, apellido, correo FROM votos_campana ORDER BY id"
+    "SELECT datetime(creado, '-5 hours') AS creado, votante, quito, guayaquil, cuenca, nombre, apellido, correo, conexion FROM votos_campana ORDER BY id"
   ).all();
   const results = antes.concat(ahora);
-  const filas = [['Fecha y hora (Ecuador)', 'Nombre', 'Apellido', 'Correo', 'ID dispositivo', 'Quito', 'Guayaquil', 'Cuenca']]
-    .concat(results.map((r) => [r.creado, r.nombre || '', r.apellido || '', r.correo || '', r.votante, foto(r.quito), foto(r.guayaquil), foto(r.cuenca)]));
+  const filas = [['Fecha y hora (Ecuador)', 'Nombre', 'Apellido', 'Correo', 'ID dispositivo', 'Conexión (cifrada)', 'Quito', 'Guayaquil', 'Cuenca']]
+    .concat(results.map((r) => [r.creado, r.nombre || '', r.apellido || '', r.correo || '', r.votante, r.conexion || '', foto(r.quito), foto(r.guayaquil), foto(r.cuenca)]));
   const csv = '﻿' + filas.map((f) => f.map(celda).join(';')).join('\r\n');
   return new Response(csv, {
     headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': 'attachment; filename="votos-humana.csv"', 'Cache-Control': 'no-store' }
@@ -215,7 +286,7 @@ export default {
         await aplicarLimpieza2(env.DB);
         if (url.pathname === '/api/exportar') return await exportar(url, env);
         if (request.method === 'POST') return await votar(request, env.DB);
-        return json({ ok: true, pausada: PAUSADA, counts: await conteo(env.DB) });
+        return json({ ok: true, pausada: PAUSADA, ficha: await crearFicha(env.DB), counts: await conteo(env.DB) });
       } catch (e) {
         return json({ ok: false, motivo: 'servidor', detalle: String(e && e.message || e).slice(0, 300) }, 500);
       }
