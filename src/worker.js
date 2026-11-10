@@ -4,6 +4,7 @@
 // - Todo lo demás: la página y las fotos (carpeta public/)
 
 import { LIMPIEZA_1 } from './limpieza1.js';
+import { LIMPIEZA_2 } from './limpieza2.js';
 
 const CIERRE = Date.parse('2026-11-11T17:00:00-05:00'); // miércoles 11 nov, 5:00 p. m. (Ecuador)
 const CIUDADES = ['quito', 'guayaquil', 'cuenca'];
@@ -95,6 +96,42 @@ async function aplicarLimpieza(db) {
   limpiezaLista = true;
 }
 
+// Segunda limpieza (9 nov 2026): votos de robots / registros masivos. Una sola vez, en un lote atómico.
+let limpieza2Lista = false;
+async function aplicarLimpieza2(db) {
+  if (limpieza2Lista) return;
+  const hecho = await db.prepare("SELECT valor FROM ajustes WHERE clave = 'limpieza_2'").first();
+  if (hecho) { limpieza2Lista = true; return; }
+  const G = "NOT EXISTS (SELECT 1 FROM ajustes WHERE clave = 'limpieza_2')";
+  const lote = (conVieja) => [
+    db.prepare('CREATE TABLE IF NOT EXISTS borrar2 (f TEXT, v TEXT, q TEXT, g TEXT, c TEXT, correo TEXT, n INTEGER)'),
+    db.prepare('CREATE TABLE IF NOT EXISTS borrar2_ids (id INTEGER)'),
+    db.prepare('DELETE FROM borrar2'),
+    db.prepare('DELETE FROM borrar2_ids'),
+    ...LIMPIEZA_2.map((sql) => db.prepare(sql)),
+    db.prepare(
+      'INSERT INTO borrar2_ids (id) SELECT id FROM (' +
+      "SELECT t.id, b.n, ROW_NUMBER() OVER (PARTITION BY t.votante, t.f, t.quito, t.guayaquil, t.cuenca, t.correo ORDER BY t.id) AS rn " +
+      "FROM (SELECT id, votante, datetime(creado, '-5 hours') AS f, quito, guayaquil, cuenca, lower(correo) AS correo FROM votos_campana) t " +
+      'JOIN borrar2 b ON b.v = t.votante AND b.f = t.f AND b.q = t.quito AND b.g = t.guayaquil AND b.c = t.cuenca AND b.correo = t.correo' +
+      ') WHERE rn <= n AND ' + G
+    ),
+    db.prepare('DELETE FROM votos_campana WHERE id IN (SELECT id FROM borrar2_ids)'),
+    db.prepare('DELETE FROM resumen'),
+    ...CIUDADES.map((k) => db.prepare(
+      `INSERT INTO resumen (ciudad, foto, n) SELECT '${k}', foto, SUM(n) FROM (` +
+      (conVieja ? `SELECT ${k} AS foto, COUNT(*) AS n FROM votos_publico WHERE ${k} <> '' GROUP BY ${k} UNION ALL ` : '') +
+      `SELECT ${k} AS foto, COUNT(*) AS n FROM votos_campana WHERE ${k} <> '' GROUP BY ${k}) GROUP BY foto`
+    )),
+    db.prepare(
+      "INSERT INTO ajustes (clave, valor) SELECT 'limpieza_2', 'borrados ' || (SELECT COUNT(*) FROM borrar2_ids) || ' de ' || (SELECT SUM(n) FROM borrar2) || ' · ' || datetime('now', '-5 hours') WHERE " + G
+    ),
+    db.prepare('DELETE FROM borrar2')
+  ];
+  try { await db.batch(lote(true)); } catch (e) { await db.batch(lote(false)); }
+  limpieza2Lista = true;
+}
+
 async function conteo(db) {
   const c = { quito: {}, guayaquil: {}, cuenca: {} };
   const { results } = await db.prepare('SELECT ciudad, foto, n FROM resumen').all();
@@ -175,6 +212,7 @@ export default {
         await prepararTabla(env.DB);
         await prepararResumen(env.DB);
         await aplicarLimpieza(env.DB);
+        await aplicarLimpieza2(env.DB);
         if (url.pathname === '/api/exportar') return await exportar(url, env);
         if (request.method === 'POST') return await votar(request, env.DB);
         return json({ ok: true, pausada: PAUSADA, counts: await conteo(env.DB) });
