@@ -6,7 +6,7 @@
 import { LIMPIEZA_1 } from './limpieza1.js';
 import { LIMPIEZA_2 } from './limpieza2.js';
 
-const CIERRE = Date.parse('2026-11-10T22:14:00-05:00'); // votación cerrada el martes 10 nov, 10:14 p. m. (Ecuador)
+const CIERRE = Date.parse('2026-11-11T17:00:00-05:00'); // miércoles 11 nov, 5:00 p. m. (Ecuador)
 const CIUDADES = ['quito', 'guayaquil', 'cuenca'];
 // Votación en pausa: no se aceptan votos nuevos (los votos guardados y los resultados se mantienen). Cambiar a false para reabrir.
 const PAUSADA = false;

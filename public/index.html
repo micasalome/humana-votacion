@@ -520,7 +520,7 @@ class Component extends DCLogic {
   renderVals() {
     var self = this;
     // Cierre: miércoles 11 nov 2026, 5:00 p. m. hora de Ecuador (UTC-5)
-    var closeAt = Date.parse('2026-11-10T22:14:00-05:00');
+    var closeAt = Date.parse('2026-11-11T17:00:00-05:00');
     var left = Math.max(0, closeAt - this.state.now);
     var pausada = !!this.state.pausada;
     var open = left > 0 && !pausada;
@@ -771,7 +771,7 @@ class Component extends DCLogic {
       irSiguiente: function () { self.irCiudad(1); },
       ciudadesVotadas: ciudadesVotadas,
       cerradoTitulo: pausada ? 'Votación en pausa' : 'La votación ha cerrado',
-      cerradoTexto: pausada ? 'Por el momento no se reciben votos. Los resultados se mantienen.' : 'La votación terminó. ¡Gracias por participar!',
+      cerradoTexto: pausada ? 'Por el momento no se reciben votos. Los resultados se mantienen.' : 'Cerró el miércoles 11 de noviembre a las 5:00 p. m. ¡Gracias por participar!',
       showModal: !!this.state.modal && submitted,
       cerrarModal: function () {
         self.setState({ modal: false });
