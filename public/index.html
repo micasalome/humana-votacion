@@ -27,9 +27,13 @@ button{font-family:inherit}
 .nubes-hero{display:none}.hero-robot{width:190px !important;margin-top:20px !important}
 .divisor{display:none}.hero-robot{margin-top:56px !important}.barra-envio{padding:14px !important;gap:12px !important}.chips{width:100%;flex-wrap:nowrap !important;gap:6px !important}.chips>div{min-width:0 !important;padding:6px 8px !important}.envio-der{align-items:stretch !important}.envio-der button{width:100%}.envio-der span{text-align:center !important}}
 @media (prefers-reduced-motion: reduce){*{animation:none !important}}
+/* Página cerrada: solo se ve el robot y el título "Humana para humanos" */
+body.solo-portada header,body.solo-portada .cta-pill,body.solo-portada .reloj,body.solo-portada .reloj + p,body.solo-portada .burbuja-robot,body.solo-portada .hero ~ *{display:none !important}
+body.solo-portada #app > div{min-height:100vh !important}
+body.solo-portada .hero{margin-top:0 !important;padding-top:90px;min-height:calc(100vh - 90px) !important;justify-content:center}
 </style>
 </head>
-<body>
+<body class="solo-portada">
 <div id="app"></div>
 <template id="plantilla">
 <div style="position: relative; overflow: hidden; overflow: clip; min-height: 2050px; font-family: 'Quicksand', system-ui, sans-serif; color: #0A3566; background: radial-gradient(ellipse 80% 50% at 70% 8%, rgba(70, 140, 255, 0.35) 0%, rgba(70, 140, 255, 0) 70%), linear-gradient(180deg, #040C26 0%, #081B4E 28%, #0B2C72 58%, #12469E 100%)">

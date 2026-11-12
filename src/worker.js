@@ -284,6 +284,8 @@ export default {
         if (request.method === 'POST') return await votar(request, env.DB);
         let ficha = '';
         try { ficha = await crearFicha(env.DB); } catch (e) {}
+        // Página cerrada: ya no se muestran resultados (los votos siguen guardados y se pueden exportar)
+        if (Date.now() >= CIERRE) return json({ ok: true, pausada: false, cerrada: true, counts: { quito: {}, guayaquil: {}, cuenca: {} } });
         return json({ ok: true, pausada: PAUSADA, ficha, counts: await conteo(env.DB) });
       } catch (e) {
         return json({ ok: false, motivo: 'servidor', detalle: String(e && e.message || e).slice(0, 300) }, 500);
